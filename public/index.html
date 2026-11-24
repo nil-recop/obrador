@@ -203,9 +203,9 @@ td.t-main{font-weight:500;min-width:160px}
 @media (max-width:480px){.kpis{grid-template-columns:minmax(0,1fr)}.fgrid{grid-template-columns:minmax(0,1fr)}.tools input[type=search]{width:100%}}
 @media (prefers-reduced-motion:no-preference){.drawer{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
 </style>
-<link rel="stylesheet" href="acces.css">
+<link rel="stylesheet" href="acces.css?v=2">
 </head>
-<body>
+<body class="bloquejat">
 
 <div class="app">
   <aside class="side">
@@ -219,8 +219,8 @@ td.t-main{font-weight:500;min-width:160px}
 <div id="drawerHost"></div>
 <div id="toastHost"></div>
 
-<script src="config.js"></script>
-<script src="dades.js"></script>
+<script src="config.js?v=2"></script>
+<script src="dades.js?v=2"></script>
 <script>
 /* ---------- Constants & schema ---------- */
 const OBRA_ESTATS=['Licitació','Preparació','En execució','Aturada','Recepció provisional','Tancada'];
@@ -781,6 +781,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-gestio.js"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-gestio.js?v=2"></script>
 </body>
 </html>
