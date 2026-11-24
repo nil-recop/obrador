@@ -1,0 +1,4 @@
+.env*
+dades-privades/
+*.csv
+*.xlsx
