@@ -1,4 +1,4 @@
-# Obra-empresa
+# Obrador
 
 Plataforma de gestió d'obra i documents. Web autònoma: no depèn de Claude.
 
@@ -11,7 +11,7 @@ Plataforma de gestió d'obra i documents. Web autònoma: no depèn de Claude.
 ## Com funciona
 
 Cada persona entra amb correu i contrasenya. Només hi accedeix qui figura a `obrador_membres` (rols `lectura`, `edicio` i `admin`).
-La recollida s'executa dins de Supabase cada 5 minuts. Només llegeix RECOPAPP; no en copia baixes ni PIN. Una edició feta a l'Obrador es conserva fins que el mateix part canvia a RECOPAPP. Un part esborrat a l'Obrador no es torna a crear.
+La recollida s'executa dins de Supabase cada dia a les 00:00 (hora de Madrid). Només llegeix RECOPAPP; no en copia baixes ni PIN. Una edició feta a l'Obrador es conserva fins que el mateix part canvia a RECOPAPP. Un part esborrat a l'Obrador no es torna a crear.
 
 ## Posada en marxa
 
