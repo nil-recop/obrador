@@ -12,6 +12,7 @@ Plataforma de gestió d'obra i documents. Web autònoma: no depèn de Claude.
 
 Cada persona entra amb correu i contrasenya. Només hi accedeix qui figura a `obrador_membres` (rols `lectura`, `edicio` i `admin`).
 La recollida s'executa dins de Supabase cada dia a les 00:00 (hora de Madrid). Només llegeix RECOPAPP; no en copia baixes ni PIN. Una edició feta a l'Obrador es conserva fins que el mateix part canvia a RECOPAPP. Un part esborrat a l'Obrador no es torna a crear.
+Els treballadors i encarregats no tenen compte: cadascú té una fitxa a *Personal i parts*, enllaçada amb els seus parts.
 
 ## Posada en marxa
 
@@ -21,7 +22,7 @@ La recollida s'executa dins de Supabase cada dia a les 00:00 (hora de Madrid). N
    `insert into public.obrador_membres select id, 'Nom', 'admin' from auth.users where email = '...';`
 4. Ompliu `public/config.js` amb l'adreça i la clau **pública**.
 5. Importeu les dades de l'Obrador antic, **inclòs `registre/recopapp`**. Conserveu els identificadors.
-6. Executeu `sql/02_automatic.sql` i desactiveu la tasca programada de Claude.
+6. Executeu `sql/03_personal.sql` i després `sql/02_automatic.sql`, i desactiveu la tasca programada de Claude.
 7. Publiqueu la carpeta `public/`. Netlify llegeix `netlify.toml`.
 
 ## Proves
