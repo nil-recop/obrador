@@ -215,7 +215,7 @@ function controlHtml(id){
    <div class="kpi"><div class="l">Venda a partides</div><div class="v">${fmtM(k.venda)}</div><div class="s">Contracte vigent ${fmtM(k.contracte)}${k.modAp?` (inclou ${fmtM(k.modAp)} de modificats)`:''}</div></div>
    <div class="kpi"><div class="l">Produït a preu de venda</div><div class="v">${fmtM(k.produit)}</div><div class="s">${pc(k.produit,k.venda)} d'execució · pendent de certificar <b style="color:${k.pendCert>0?'var(--warn)':'inherit'}">${fmtM(k.pendCert)}</b></div></div>
    <div class="kpi"><div class="l">Cost imputat a partides</div><div class="v">${fmtM(k.costImp)}</div><div class="s">Desviació ${devHtml(k.desv)} sobre el cost guanyat</div></div>
-   <div class="kpi"><div class="l">Marge final previst</div><div class="v" style="color:${k.marge==null?'inherit':k.marge<0?'var(--bad)':'var(--ok)'}">${k.marge==null?'—':(k.marge*100).toFixed(1)+'%'}</div><div class="s">Inicial ${k.margePrev==null?'—':(k.margePrev*100).toFixed(1)+'%'} · cost final previst ${fmtM(k.eac)}</div></div>
+   <div class="kpi"><div class="l">Marge net final previst</div><div class="v" style="color:${k.margeNet==null?'inherit':k.margeNet<0?'var(--bad)':'var(--ok)'}">${p1(k.margeNet)}</div><div class="s">Brut ${p1(k.marge)} − estructura ${pn(k.estPct)} · brut inicial ${k.margePrev==null?'—':(k.margePrev*100).toFixed(1)+'%'} · cost final previst ${fmtM(k.eac)}</div></div>
   </div>`;
   return kp+`<div class="grid2"><div class="stack">
    <section class="panel"><h2>Per capítols</h2><div class="tw"><table><thead><tr><th>Capítol</th><th class="num">Partides</th><th class="num">Venda</th><th class="num">Produït</th><th class="num">Cost real</th><th class="num">Desviació</th><th class="num">Cost final prev.</th><th class="num">Marge final</th></tr></thead><tbody>
@@ -228,6 +228,7 @@ function controlHtml(id){
     <dt>Imputat a partides</dt><dd class="mono">${fmtM(k.costImp)}</dd>
     <dt>Sense imputar</dt><dd class="mono" style="color:${Math.abs(sinImp)>Math.max(500,k.f.cost*0.05)?'var(--warn)':'inherit'}">${fmtM(sinImp)}</dd>
     <dt>Contracte vigent</dt><dd class="mono">${fmtM(k.contracte)}</dd>
+    <dt>Estructura prevista</dt><dd class="mono">${fmtM(k.estPrev)} <span class="small">(${pn(k.estPct)})</span></dd>
     <dt>Venda a partides</dt><dd class="mono">${fmtM(k.venda)} <span class="small">(dif. ${fmtM(k.contracte-k.venda)})</span></dd>
     <dt>Certificat a origen</dt><dd class="mono">${fmtM(k.certOrigen)}</dd>
     <dt>Facturat / cobrat</dt><dd class="mono">${fmtM(k.f.certificat)} / ${fmtM(k.f.cobrat)}</dd>
@@ -245,6 +246,7 @@ function gestioHtml(){
   const ks=act.map(o=>({o,k:ctlObra(o.id)}));
   const venda=sum(ks,x=>x.k.venda),eac=sum(ks,x=>x.k.eac),costPrev=sum(ks,x=>x.k.costPrev);
   const marge=venda?(venda-eac)/venda:null,margePrev=venda?(venda-costPrev)/venda:null;
+  const margeNet=venda?(venda-eac-sum(ks,x=>x.k.estVenda))/venda:null;
   const pendCert=sum(ks,x=>Math.max(0,x.k.pendCert));
   const perFact=sum(S.certificacions.filter(c=>c.estat==='Conformada'),c=>certPer(c));
   const desv=sum(ks,x=>x.k.desv),guany=sum(ks,x=>x.k.costGuanyat);
@@ -254,12 +256,13 @@ function gestioHtml(){
   <div class="kpis">
    <div class="kpi"><div class="l">Producció pendent de certificar</div><div class="v">${fmtM(pendCert)}</div><div class="s">Obres actives · produït − certificat a origen</div></div>
    <div class="kpi"><div class="l">Certificacions per facturar</div><div class="v">${fmtM(perFact)}</div><div class="s">Conformades i encara sense factura</div></div>
-   <div class="kpi"><div class="l">Marge final previst</div><div class="v" style="color:${marge==null?'inherit':marge<0?'var(--bad)':'var(--ok)'}">${marge==null?'—':(marge*100).toFixed(1)+'%'}</div><div class="s">Inicial ${margePrev==null?'—':(margePrev*100).toFixed(1)+'%'} · pondera per venda de les partides</div></div>
+   <div class="kpi"><div class="l">Marge net final previst</div><div class="v" style="color:${margeNet==null?'inherit':margeNet<0?'var(--bad)':'var(--ok)'}">${p1(margeNet)}</div><div class="s">Brut ${p1(marge)} · brut inicial ${margePrev==null?'—':(margePrev*100).toFixed(1)+'%'} · pondera per venda de les partides</div></div>
    <div class="kpi"><div class="l">Desviació de cost</div><div class="v">${devHtml(desv)}</div><div class="s">${guany?(desv/guany*100).toFixed(1)+'% sobre el cost guanyat':'Sense cost imputat encara'}</div></div>
   </div>
+  ${estrConfigHtml()}
   <section class="panel" style="margin-bottom:16px"><h2>Obres actives: producció, certificació i marge</h2>
-  ${ks.length?`<div class="tw"><table><thead><tr><th>Obra</th><th class="num">Contracte vigent</th><th class="num">Produït</th><th class="num">Certificat origen</th><th class="num">Pend. certificar</th><th class="num">Facturat</th><th class="num">Cobrat</th><th class="num">Cost imputat</th><th class="num">Cost final prev.</th><th class="num">Marge final</th><th class="num">Desv. cost</th></tr></thead><tbody>
-  ${ks.map(({o,k})=>`<tr data-act="goObraCtl" data-id="${esc(o.id)}"><td class="t-main"><div class="code">${esc(o.codi)}</div>${esc(o.nom)}</td><td class="num">${fmtM(k.contracte)}</td><td class="num">${fmtM(k.produit)}</td><td class="num">${fmtM(k.certOrigen)}</td><td class="num" style="color:${k.pendCert>0?'var(--warn)':'inherit'}">${fmtM(k.pendCert)}</td><td class="num">${fmtM(k.f.certificat)}</td><td class="num">${fmtM(k.f.cobrat)}</td><td class="num">${fmtM(k.costImp)}</td><td class="num">${k.ps.length?fmtM(k.eac):'—'}</td><td class="num">${pctHtml(k.marge)}</td><td class="num">${k.ps.length?devHtml(k.desv):'—'}</td></tr>`).join('')}
+  ${ks.length?`<div class="tw"><table><thead><tr><th>Obra</th><th class="num">Contracte vigent</th><th class="num">Produït</th><th class="num">Certificat origen</th><th class="num">Pend. certificar</th><th class="num">Facturat</th><th class="num">Cobrat</th><th class="num">Cost imputat</th><th class="num">Cost final prev.</th><th class="num">Marge brut final</th><th class="num">Estructura prev.</th><th class="num">Marge net final</th><th class="num">Desv. cost</th></tr></thead><tbody>
+  ${ks.map(({o,k})=>`<tr data-act="goObraCtl" data-id="${esc(o.id)}"><td class="t-main"><div class="code">${esc(o.codi)}</div>${esc(o.nom)}</td><td class="num">${fmtM(k.contracte)}</td><td class="num">${fmtM(k.produit)}</td><td class="num">${fmtM(k.certOrigen)}</td><td class="num" style="color:${k.pendCert>0?'var(--warn)':'inherit'}">${fmtM(k.pendCert)}</td><td class="num">${fmtM(k.f.certificat)}</td><td class="num">${fmtM(k.f.cobrat)}</td><td class="num">${fmtM(k.costImp)}</td><td class="num">${k.ps.length?fmtM(k.eac):'—'}</td><td class="num">${pctHtml(k.marge)}</td><td class="num">${fmtM(k.estPrev)}</td><td class="num">${pctHtml(k.margeNet)}</td><td class="num">${k.ps.length?devHtml(k.desv):'—'}</td></tr>`).join('')}
   </tbody></table></div>`:`<div class="empty"><b>Cap obra activa</b>Quan hi hagi obres en preparació o execució, aquí en veuràs la producció i el marge.</div>`}
   </section>
   <div class="grid2">
