@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Obrador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: dark site-hut sidebar (modules) + concrete-grey work surface; drawers slide in from the right for records and documents. */
+:root{
+  --bg:#ECEFF1; --surface:#FFFFFF; --sunk:#E2E6E9; --ink:#15202B; --muted:#58646F; --line:#D2D8DD;
+  --side:#16202A; --side-ink:#CBD4DC; --side-mut:#7E8B97; --side-hi:#223140;
+  --accent:#E8A200; --accent-ink:#1A1300; --link:#1F5C99;
+  --ok:#2D7A4C; --warn:#9A6210; --bad:#B53A2E; --info:#2B67A8; --neu:#66717C;
+  --shadow:0 10px 30px rgba(18,28,38,.18);
+  --f-disp:'Archivo','Arial Narrow',Arial,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161B; --surface:#192027; --sunk:#141A20; --ink:#E4E9ED; --muted:#98A4AF; --line:#2B353F;
+  --side:#0C1116; --side-ink:#C5CED6; --side-mut:#74818D; --side-hi:#1B2631;
+  --accent:#F2B230; --accent-ink:#1A1300; --link:#82B4E6;
+  --ok:#5DBF88; --warn:#E3AE55; --bad:#EE7D70; --info:#80B3E8; --neu:#94A0AB;
+  --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#11161B; --surface:#192027; --sunk:#141A20; --ink:#E4E9ED; --muted:#98A4AF; --line:#2B353F;
+  --side:#0C1116; --side-ink:#C5CED6; --side-mut:#74818D; --side-hi:#1B2631;
+  --accent:#F2B230; --accent-ink:#1A1300; --link:#82B4E6;
+  --ok:#5DBF88; --warn:#E3AE55; --bad:#EE7D70; --info:#80B3E8; --neu:#94A0AB;
+  --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--link)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.muted{color:var(--muted)}
+
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
+.side{background:var(--side);color:var(--side-ink);position:sticky;top:env(safe-area-inset-top,0px);height:100vh;display:flex;flex-direction:column;padding-left:env(safe-area-inset-left,0px)}
+.hazard{height:6px;background:repeating-linear-gradient(-45deg,var(--accent) 0 10px,var(--side) 10px 20px)}
+.brand{padding:18px 18px 14px;display:flex;flex-direction:column;gap:2px}
+.brand b{font-family:var(--f-disp);font-stretch:112%;font-weight:800;font-size:22px;letter-spacing:.02em;color:#fff}
+.brand span{font-size:11px;color:var(--side-mut);letter-spacing:.08em;text-transform:uppercase}
+.nav{display:flex;flex-direction:column;gap:2px;padding:6px 10px;overflow-y:auto;flex:1}
+.nav h6{margin:14px 8px 4px;font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--side-mut)}
+.nav a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:5px;color:var(--side-ink);text-decoration:none;font-weight:500;white-space:nowrap}
+.nav a:hover{background:var(--side-hi)}
+.nav a.on{background:var(--side-hi);color:#fff;box-shadow:inset 3px 0 0 var(--accent)}
+.nav svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;opacity:.85}
+.nav .badge{margin-left:auto;background:var(--bad);color:#fff;font-size:11px;border-radius:9px;padding:0 6px;font-family:var(--f-mono)}
+.who{padding:12px 16px 16px;border-top:1px solid var(--side-hi);display:flex;align-items:center;gap:10px;font-size:12.5px}
+.who img{width:28px;height:28px;border-radius:50%}
+.who small{display:block;color:var(--side-mut)}
+
+.main{min-width:0;padding-block:22px 60px;padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px))}
+.banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:color-mix(in srgb,var(--accent) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));padding:10px 14px;border-radius:var(--r);margin-bottom:16px}
+.banner p{margin:0;flex:1;min-width:200px}
+.head{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.head h1{font-family:var(--f-disp);font-stretch:105%;font-weight:750;font-size:28px;line-height:1.1;margin:0;text-wrap:balance}
+.head .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.head .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:5px;cursor:pointer;font-weight:500;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.pri:hover{filter:brightness(1.05)}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.btn.danger.arm{background:var(--bad);color:#fff}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn:disabled{opacity:.5;cursor:default}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 11px;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--surface)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.kpi .l{font-size:11.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.kpi .v{font-family:var(--f-disp);font-weight:700;font-size:26px;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.panel>h2{font-family:var(--f-disp);font-size:15px;font-weight:700;margin:0;padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.panel>h2 .sp{flex:1}
+.panel .pb{padding:12px 16px}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.tools input[type=search],.tools select{border:1px solid var(--line);background:var(--surface);border-radius:5px;padding:7px 10px;min-width:0}
+.tools input[type=search]{width:240px;max-width:100%}
+.tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.panel .tw{border:0;border-radius:0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--sunk)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+tbody tr:last-child td{border-bottom:0}
+td.t-main{font-weight:500;min-width:160px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:10px;white-space:nowrap;color:var(--tone);background:color-mix(in srgb,var(--tone) 14%,transparent)}
+.t-ok{--tone:var(--ok)}.t-warn{--tone:var(--warn)}.t-bad{--tone:var(--bad)}.t-info{--tone:var(--info)}.t-neu{--tone:var(--neu)}
+.bar{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;min-width:70px}
+.bar i{display:block;height:100%;background:var(--ink)}
+.bar.c i{background:var(--warn)}
+.bar.over i{background:var(--bad)}
+.prog{display:flex;align-items:center;gap:8px}
+.prog span{font-size:12px;width:34px;text-align:right}
+.code{font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+
+.empty{padding:34px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+.empty .btn{margin-top:12px}
+
+.kan{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:12px;overflow-x:auto;padding-bottom:6px}
+.col{background:var(--sunk);border-radius:var(--r);padding:8px;min-height:120px;display:flex;flex-direction:column;gap:8px}
+.col.over{outline:2px dashed var(--accent)}
+.col>header{display:flex;justify-content:space-between;align-items:center;padding:2px 4px;font-size:12.5px;font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:9px 10px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.card:hover{border-color:var(--muted)}
+.card .m{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+
+.alist{list-style:none;margin:0;padding:0}
+.alist li{display:flex;gap:10px;align-items:flex-start;padding:9px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.alist li:last-child{border-bottom:0}
+.alist li:hover{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.alist .dot{width:8px;height:8px;border-radius:50%;background:var(--tone);margin-top:6px;flex:none}
+.alist .tx{flex:1;min-width:0}
+.alist small{display:block;color:var(--muted);font-size:12px}
+.feed li{cursor:default}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:9px 14px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+
+.docs{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
+.tree{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px;font-size:13px;max-height:calc(100vh - 160px);overflow:auto;position:sticky;top:12px}
+.tree details>summary{list-style:none;cursor:pointer;padding:5px 6px;border-radius:4px;font-weight:600;display:flex;gap:6px;align-items:center}
+.tree details>summary::-webkit-details-marker{display:none}
+.tree details>summary::before{content:'▸';font-size:10px;color:var(--muted);width:10px}
+.tree details[open]>summary::before{content:'▾'}
+.tree .f{display:flex;gap:6px;align-items:center;padding:4px 6px 4px 22px;border-radius:4px;cursor:pointer;color:var(--ink)}
+.tree .f:hover{background:var(--sunk)}
+.tree .f.on{background:color-mix(in srgb,var(--accent) 20%,transparent);font-weight:600}
+.tree .f i{font-style:normal;margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.tree .root{padding-left:8px;font-weight:600}
+.crumb{font-size:13px;color:var(--muted);margin-bottom:2px}
+.drop{border:2px dashed var(--line);border-radius:var(--r);padding:14px;text-align:center;color:var(--muted);margin-bottom:12px;font-size:13px}
+.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--ink)}
+.ficon{display:inline-grid;place-items:center;width:30px;height:22px;border-radius:3px;font-family:var(--f-mono);font-size:9.5px;font-weight:600;color:#fff;background:var(--neu);margin-right:8px;vertical-align:middle;flex:none}
+.ficon.pdf{background:#B53A2E}.ficon.img{background:#2D7A4C}.ficon.vid{background:#6B4FA8}.ficon.dat{background:#2B67A8}
+
+.scrim{position:fixed;inset:0;background:rgba(10,16,22,.38);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(540px,100%);background:var(--surface);z-index:41;box-shadow:var(--shadow);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer>header{display:flex;align-items:center;gap:10px;padding:14px 18px;padding-right:max(18px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line)}
+.drawer>header h3{margin:0;font-family:var(--f-disp);font-size:18px;flex:1;min-width:0;overflow-wrap:anywhere}
+.drawer .body{padding:16px 18px;padding-right:max(18px,env(safe-area-inset-right,0px));overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.drawer>footer{display:flex;gap:8px;padding:12px 18px;padding-right:max(18px,env(safe-area-inset-right,0px));border-top:1px solid var(--line);flex-wrap:wrap}
+.drawer>footer .sp{flex:1}
+.x{border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;padding:4px 8px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld.w{grid-column:1/-1}
+.fld label{font-size:12px;color:var(--muted);font-weight:500}
+.fld input,.fld select,.fld textarea{border:1px solid var(--line);background:var(--bg);border-radius:5px;padding:8px 10px;width:100%;min-width:0}
+.fld textarea{min-height:80px;resize:vertical}
+.calc{background:var(--sunk);border-radius:5px;padding:10px 12px;font-size:13px;display:grid;grid-template-columns:1fr auto;gap:2px 16px}
+.calc b{font-family:var(--f-mono)}
+.vers{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:5px}
+.vers li{display:flex;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px;flex-wrap:wrap}
+.vers li:last-child{border-bottom:0}
+.vers .tx{flex:1;min-width:140px}
+.prev{background:var(--sunk);border-radius:5px;display:grid;place-items:center;min-height:120px;overflow:hidden}
+.prev img,.prev video{max-width:100%;max-height:320px;display:block}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px}
+.meta dt{color:var(--muted)}
+.meta dd{margin:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:5px;z-index:60;font-size:13.5px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+
+@media (max-width:1080px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:820px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;height:auto;padding-left:0}
+  .brand{flex-direction:row;align-items:baseline;gap:10px;padding:12px max(16px,env(safe-area-inset-left,0px)) 6px}
+  .nav{flex-direction:row;overflow-x:auto;padding:4px max(16px,env(safe-area-inset-left,0px)) 10px}
+  .nav h6{display:none}
+  .nav a.on{box-shadow:inset 0 -3px 0 var(--accent)}
+  .who{display:none}
+  .main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 50px}
+  .docs{grid-template-columns:minmax(0,1fr)}
+  .tree{position:static;max-height:260px}
+  .head h1{font-size:23px}
+}
+@media (max-width:480px){.kpis{grid-template-columns:minmax(0,1fr)}.fgrid{grid-template-columns:minmax(0,1fr)}.tools input[type=search]{width:100%}}
+@media (prefers-reduced-motion:no-preference){.drawer{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
+</style>
+<link rel="stylesheet" href="acces.css">
+</head>
+<body>
+
+<div class="app">
+  <aside class="side">
+    <div class="hazard"></div>
+    <div class="brand"><b>OBRADOR</b><span>Gestió d'obra i documents</span></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="who" id="who"></div>
+  </aside>
+  <main class="main" id="view"><div class="loading">Carregant l'Obrador…</div></main>
+</div>
+<div id="drawerHost"></div>
+<div id="toastHost"></div>
+
+<script src="config.js"></script>
+<script src="dades.js"></script>
+<script>
+/* ---------- Constants & schema ---------- */
+const OBRA_ESTATS=['Licitació','Preparació','En execució','Aturada','Recepció provisional','Tancada'];
+const FASES=['Implantació','Moviment de terres','Fonamentació','Estructura','Tancaments','Coberta','Instal·lacions','Acabats','Urbanització'];
+const CARP_OBRA=['01 Projecte i plànols','02 Contracte i pressupost','03 Certificacions','04 Seguretat i salut','05 Qualitat i assajos','06 Fotografies d\'obra','07 Actes i correspondència','08 Final d\'obra'];
+const CARP_EMP=['Plantilles','Qualitat ISO 9001','Prevenció de riscos','Administració','Maquinària: fitxes i ITV'];
+const DOC_ESTATS=['Esborrany','En revisió','Aprovat','Obsolet'];
+const TONE={'Licitació':'info','Preparació':'neu','En execució':'ok','Aturada':'bad','Recepció provisional':'warn','Tancada':'neu',
+ 'Pendent':'warn','En curs':'info','Bloquejada':'bad','Feta':'ok','Detectada':'neu','En estudi':'info','Ofertada':'warn','Adjudicada':'ok','Perduda':'bad',
+ 'Esborrany':'neu','Sol·licitada':'info','Aprovada':'ok','Rebuda':'ok','Cancel·lada':'bad','Cobrada':'ok','Pagada':'ok','Vençuda':'bad',
+ 'Disponible':'ok','En obra':'info','En reparació':'warn','Baixa':'bad','En revisió':'warn','Aprovat':'ok','Obsolet':'bad','Alta':'bad','Normal':'neu','Baixa ':'neu'};
+const M={
+ obres:{t:'Obres',s:'obra',pref:'OB',tit:'nom',camps:[
+  {k:'codi',l:'Codi',tp:'code',req:1},{k:'nom',l:"Nom de l'obra",tp:'text',req:1,w:1},
+  {k:'client',l:'Client / promotor',tp:'text'},{k:'ubicacio',l:'Ubicació',tp:'text'},
+  {k:'tipus',l:'Tipologia',tp:'sel',o:['Obra nova residencial','Rehabilitació','Façanes','Industrial','Equipament públic','Obra civil']},
+  {k:'estat',l:'Estat',tp:'sel',o:OBRA_ESTATS},{k:'cap',l:"Cap d'obra",tp:'text'},{k:'superficie',l:'Superfície (m²)',tp:'num'},
+  {k:'inici',l:'Inici',tp:'date'},{k:'fi',l:'Fi prevista',tp:'date'},
+  {k:'pressupost',l:'Import contracte (PEC, sense IVA)',tp:'money'},{k:'avanc',l:"Avanç d'obra (%)",tp:'pct'}],
+  cols:['codi','nom','client','estat','avanc','pressupost',{l:'Cost real',num:1,f:o=>fmtM(fin(o.id).cost)}]},
+ tasques:{t:'Planificació',s:'tasca',tit:'titol',kanban:1,camps:[
+  {k:'titol',l:'Tasca',tp:'text',req:1,w:1},{k:'obraId',l:'Obra',tp:'obra'},{k:'fase',l:'Fase',tp:'sel',o:FASES},
+  {k:'estat',l:'Estat',tp:'sel',o:['Pendent','En curs','Bloquejada','Feta']},{k:'prioritat',l:'Prioritat',tp:'sel',o:['Normal','Alta','Baixa ']},
+  {k:'responsable',l:'Responsable',tp:'text'},{k:'limit',l:'Data límit',tp:'date'},{k:'notes',l:'Notes',tp:'area',w:1}],
+  cols:['titol','obraId','fase','responsable','limit','prioritat','estat']},
+ oportunitats:{t:'Licitacions',s:'oportunitat',tit:'nom',kanban:1,camps:[
+  {k:'nom',l:'Licitació / projecte',tp:'text',req:1,w:1},{k:'client',l:'Client',tp:'text'},
+  {k:'tipus',l:'Tipologia',tp:'sel',o:['Obra nova residencial','Rehabilitació','Façanes','Industrial','Equipament públic','Obra civil']},
+  {k:'estat',l:'Estat',tp:'sel',o:['Detectada','En estudi','Ofertada','Adjudicada','Perduda']},
+  {k:'import',l:'Import ofertat (sense IVA)',tp:'money'},{k:'probabilitat',l:'Probabilitat (%)',tp:'pct'},
+  {k:'presentacio',l:"Data de presentació",tp:'date'},{k:'notes',l:'Notes',tp:'area',w:1}],
+  cols:['nom','client','tipus','presentacio','import','probabilitat','estat']},
+ comandes:{t:'Compres',s:'comanda',pref:'CP',tit:'concepte',kanban:1,camps:[
+  {k:'num',l:'Núm. comanda',tp:'code',req:1},{k:'obraId',l:'Obra',tp:'obra'},
+  {k:'proveidor',l:'Proveïdor / subcontractista',tp:'text',req:1},{k:'tipus',l:'Tipus',tp:'sel',o:['Material','Subcontracta','Lloguer de maquinària','Serveis']},
+  {k:'concepte',l:'Concepte',tp:'text',w:1},{k:'import',l:'Import (sense IVA)',tp:'money'},
+  {k:'estat',l:'Estat',tp:'sel',o:['Esborrany','Sol·licitada','Aprovada','Rebuda','Cancel·lada']},{k:'data',l:'Data',tp:'date'}],
+  cols:['num','obraId','proveidor','tipus','concepte','import','estat']},
+ factures:{t:'Facturació',s:'factura',pref:'FV',tit:'concepte',camps:[
+  {k:'num',l:'Núm. factura',tp:'code',req:1},{k:'sentit',l:'Tipus',tp:'sel',o:['Emesa','Rebuda']},
+  {k:'obraId',l:'Obra',tp:'obra'},{k:'tercer',l:'Client / proveïdor',tp:'text'},
+  {k:'concepte',l:'Concepte',tp:'text',w:1,ph:'Certificació núm. 3 — octubre'},
+  {k:'base',l:'Base imposable',tp:'money'},{k:'iva',l:'IVA',tp:'sel',o:['21%','10%','ISP (inversió del subjecte passiu)']},
+  {k:'retencio',l:'Retenció de garantia (%)',tp:'pct'},{k:'estat',l:'Estat',tp:'sel',o:['Esborrany','Pendent','Cobrada','Pagada','Vençuda']},
+  {k:'data',l:'Data factura',tp:'date'},{k:'venciment',l:'Venciment',tp:'date'}],
+  cols:['num','sentit','obraId','tercer','concepte',{l:'Total',num:1,f:o=>fmtM(totF(o).total)},'venciment','estat']},
+ parts:{t:'Parts de treball',s:'part',tit:'treballador',camps:[
+  {k:'data',l:'Data',tp:'date',req:1},{k:'obraId',l:'Obra',tp:'obra',req:1},{k:'treballador',l:'Treballador / equip',tp:'text',req:1},
+  {k:'ofici',l:'Categoria',tp:'sel',o:['Encarregat','Oficial 1a','Oficial 2a','Peó','Gruista','Electricista','Lampista','Restaurador/a']},
+  {k:'hores',l:'Hores',tp:'num'},{k:'preuHora',l:'Cost hora (€)',tp:'money'},{k:'dietes',l:'Dietes (€)',tp:'money'},{k:'desplacament',l:'Desplaçament (€)',tp:'money'},{k:'feina',l:'Feina feta',tp:'area',w:1}],
+  cols:['data','obraId','treballador','ofici','hores',{l:'Cost',num:1,f:o=>fmtM(costPart(o))},{l:'Origen',f:o=>o.origen?pill(o.origen):'<span class="muted">Manual</span>'},'feina']},
+ actius:{t:'Maquinària i magatzem',s:'actiu',pref:'AC',tit:'nom',camps:[
+  {k:'codi',l:'Codi',tp:'code',req:1},{k:'nom',l:'Descripció',tp:'text',req:1,w:1},
+  {k:'tipus',l:'Tipus',tp:'sel',o:['Maquinària','Vehicle','Mitjans auxiliars','Eina','Material de magatzem']},
+  {k:'estat',l:'Estat',tp:'sel',o:['Disponible','En obra','En reparació','Baixa']},
+  {k:'ubicacio',l:'Ubicació',tp:'obra',none:'Magatzem central'},{k:'quantitat',l:'Quantitat',tp:'num'},
+  {k:'revisio',l:'Propera revisió / ITV',tp:'date'}],
+  cols:['codi','nom','tipus','ubicacio','quantitat','revisio','estat']}
+};
+const COLS=['obres','tasques','fitxers','oportunitats','comandes','factures','parts','actius'];
+const NAV=[
+ {g:null,items:[['tauler','Tauler','M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z']]},
+ {g:'Obra',items:[['obres','Obres','M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6'],['tasques','Planificació','M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'],['parts','Parts de treball','M12 8v4l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z']]},
+ {g:'Documents',items:[['documents','Documents','M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z']]},
+ {g:'Gestió',items:[['oportunitats','Licitacions','M9 12l2 2 4-4M5 4h14v16H5z'],['comandes','Compres','M6 6h15l-2 9H7L5 3H2M9 20h.01M18 20h.01'],['factures','Facturació','M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4'],['actius','Maquinària','M3 17h4l3-6h5l2 3h4v3H3zM7 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0M10 11V6h4']]}
+];
+
+/* ---------- State ---------- */
+const S={obres:[],tasques:[],fitxers:[],oportunitats:[],comandes:[],factures:[],parts:[],actius:[],registre:[]};
+const loaded={};
+let DB=null,USER=null,ASSETS=null,ME=null,CANWRITE=true,CANASSETADMIN=false,LOCAL=false,LOCALMSG='',STALE=false;
+const NAMES={};
+const V={mods:{},obraTab:'resum',docFolder:'empresa|Plantilles',obraDocFolder:{},docQ:'',pendingDoc:null};
+const mv=k=>V.mods[k]||(V.mods[k]={q:'',estat:'',obra:'',mode:M[k]&&M[k].kanban?'kanban':'taula'});
+
+/* ---------- Utils ---------- */
+const $=s=>document.querySelector(s);
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum=(a,f)=>a.reduce((s,x)=>s+(f(x)||0),0);
+const MF=new Intl.NumberFormat('ca-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+const MF2=new Intl.NumberFormat('ca-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtM=n=>MF.format(+n||0);
+const fmtD=d=>{if(!d)return'—';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:esc(d)};
+const fmtDT=t=>{if(!t)return'—';const d=new Date(t);return isNaN(d)?'—':d.toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'})};
+const fmtSize=b=>!b?'—':b<1024?b+' B':b<1048576?(b/1024).toFixed(0)+' kB':(b/1048576).toFixed(1)+' MB';
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const addDays=(n)=>{const d=new Date();d.setDate(d.getDate()+n);return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const newId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const pill=v=>v?`<span class="pill t-${TONE[v]||'neu'}">${esc(String(v).trim())}</span>`:'<span class="muted">—</span>';
+const obra=id=>S.obres.find(o=>o.id===id);
+const obraLbl=id=>{const o=obra(id);return o?`<span class="code">${esc(o.codi||'')}</span> ${esc(o.nom||'')}`:'<span class="muted">—</span>'};
+const nm=id=>{if(!id)return'—';if(ME&&id===ME.id)return'Tu';return NAMES[id]||'Usuari'};
+let toastT;function toast(m){clearTimeout(toastT);$('#toastHost').innerHTML=`<div class="toast" role="status">${esc(m)}</div>`;toastT=setTimeout(()=>$('#toastHost').innerHTML='',3200)}
+function totF(f){const b=+f.base||0;const r=String(f.iva||'').startsWith('ISP')?0:(parseFloat(f.iva)||0)/100;const iva=b*r;const ret=b*((+f.retencio||0)/100);return{base:b,iva,ret,total:b+iva-ret}}
+const costPart=p=>(+p.hores||0)*(+p.preuHora||0)+(+p.dietes||0)+(+p.desplacament||0);
+function fin(oid){
+  const o=obra(oid)||{};
+  const fe=S.factures.filter(f=>f.obraId===oid&&f.sentit==='Emesa'&&f.estat!=='Esborrany');
+  const certificat=sum(fe,f=>+f.base);
+  const cobrat=sum(fe.filter(f=>f.estat==='Cobrada'),f=>+f.base);
+  const compres=sum(S.comandes.filter(c=>c.obraId===oid&&!['Esborrany','Cancel·lada'].includes(c.estat)),c=>+c.import);
+  const ma=sum(S.parts.filter(p=>p.obraId===oid),costPart);
+  const cost=compres+ma,pec=+o.pressupost||0;
+  return{pec,certificat,cobrat,compres,ma,cost,marge:certificat?(certificat-cost)/certificat:null};
+}
+function nextCode(mk){const p=M[mk].pref,y=new Date().getFullYear();const k=M[mk].camps[0].k;let n=0;S[mk].forEach(r=>{const m=String(r[k]||'').match(/(\d+)$/);if(m&&String(r[k]).includes(String(y)))n=Math.max(n,+m[1])});return `${p}-${y}-${String(n+1).padStart(3,'0')}`}
+const fext=n=>(String(n).split('.').pop()||'').toLowerCase();
+const OKT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml',mp4:'video/mp4',webm:'video/webm',csv:'text/csv',md:'text/markdown',json:'application/json',txt:'text/plain'};
+function ficon(n){const e=fext(n);const c=e==='pdf'?'pdf':/^(png|jpe?g|gif|webp|svg)$/.test(e)?'img':/^(mp4|webm)$/.test(e)?'vid':/^(csv|json|md|txt)$/.test(e)?'dat':'';return `<span class="ficon ${c}">${esc((e||'doc').slice(0,4).toUpperCase())}</span>`}
+const curVer=f=>(f.versions&&f.versions.length)?f.versions[f.versions.length-1]:null;
+
+/* ---------- Store layer ---------- */
+async function save(col,id,obj){
+  const body={...obj,actualitzat:new Date().toISOString(),actualitzatPer:ME&&ME.id||null};
+  delete body.id;
+  if(LOCAL){const a=S[col];const i=a.findIndex(x=>x.id===id);const r={...body,id};if(i>=0)a[i]=r;else a.push(r);schedule();return}
+  try{await DB.collection(col).doc(id).set(body)}catch(e){handleErr(e);throw e}
+}
+async function remove(col,id){
+  if(LOCAL){S[col]=S[col].filter(x=>x.id!==id);schedule();return}
+  try{await DB.collection(col).doc(id).delete()}catch(e){handleErr(e);throw e}
+}
+function handleErr(e){
+  const c=e&&e.code;
+  if(c==='conflicte')toast("Una altra persona ha canviat aquest registre. S'ha recarregat: revisa'l i torna-ho a provar.");
+  else if(c==='invalid_argument'){CANWRITE=false;toast('No tens permís per modificar dades en aquest Obrador. Demana accés de col·laborador.');schedule()}
+  else if(c==='quota_exceeded')toast("S'ha arribat al límit d'emmagatzematge. Elimina registres antics per continuar.");
+  else if(c==='resource_exhausted')toast('Massa operacions seguides. Espera uns segons i torna-ho a provar.');
+  else toast('No s\'ha pogut desar. Comprova la connexió i torna-ho a provar.');
+}
+let logChain=Promise.resolve();
+function logA(txt,ref){
+  const e={t:new Date().toISOString(),u:ME&&ME.id||null,txt,ref:ref||null};
+  if(LOCAL){S.registre=[e,...S.registre].slice(0,120);return}
+  logChain=logChain.then(()=>DB.doc('registre/recent').set({entrades:[e,...S.registre].slice(0,120)})).catch(()=>{});
+}
+
+/* ---------- Render loop ---------- */
+let raf=0;function schedule(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;paint()})}
+const needIds=new Set();
+function paint(){
+  needIds.clear();
+  const r=route();
+  $('#nav').innerHTML=navHtml(r);
+  const ae=document.activeElement,aid=ae&&ae.id&&$('#view').contains(ae)?ae.id:null,ss=aid&&ae.selectionStart;
+  $('#view').innerHTML=bannerHtml()+viewHtml(r);
+  if(aid){const n=document.getElementById(aid);if(n){n.focus();try{if(ss!=null)n.setSelectionRange(ss,ss)}catch(e){}}}
+  whoHtml();
+  resolveNames();
+}
+function collectIds(){S.registre.forEach(e=>e.u&&needIds.add(e.u));S.fitxers.forEach(f=>{f.actualitzatPer&&needIds.add(f.actualitzatPer);(f.versions||[]).forEach(v=>v.per&&needIds.add(v.per));f.aprovatPer&&needIds.add(f.aprovatPer)})}
+async function resolveNames(){
+  if(!USER||!USER.profiles)return;collectIds();const ids=[...needIds];if(!ids.length)return;
+  const ps=await USER.profiles(ids);let ch=false;
+  for(const id of ids){const n=ps[id]&&ps[id].name||'';if(n&&NAMES[id]!==n){NAMES[id]=n;ch=true}}
+  if(ch)schedule();
+}
+async function whoHtml(){
+  const w=$('#who');if(!ME){w.innerHTML=`<div><b>${LOCAL?'Mode de prova':'Connectant…'}</b><small>${LOCAL?'sense base de dades':''}</small></div>`;return}
+  const role=CANWRITE?'Pots editar':'Només lectura';
+  w.innerHTML=`<img alt="" src="${esc(ME.avatarUrl)}"><div><b></b><small>${role}</small></div>`;w.querySelector('b').textContent=ME.name||'Tu';
+}
+function route(){
+  const h=decodeURIComponent(location.hash.slice(1))||'tauler';
+  if(h.startsWith('obra-'))return{v:'obra',id:h.slice(5)};
+  if(h.startsWith('doc-'))return{v:'documents',doc:h.slice(4)};
+  return{v:(h in M||h==='documents'||h==='tauler')?h:'tauler'};
+}
+function navHtml(r){
+  const venc=S.factures.filter(isVencuda).length;
+  return NAV.map(g=>(g.g?`<h6>${g.g}</h6>`:'')+g.items.map(([k,l,p])=>{
+    const on=r.v===k||(r.v==='obra'&&k==='obres');
+    const b=k==='factures'&&venc?`<span class="badge">${venc}</span>`:'';
+    return `<a href="#${k}" class="${on?'on':''}"><svg viewBox="0 0 24 24"><path d="${p}"/></svg>${l}${b}</a>`}).join('')).join('');
+}
+function bannerHtml(){
+  let h='';
+  if(LOCAL)h+=`<div class="banner"><p><b>Mode de prova.</b> ${esc(LOCALMSG)}</p></div>`;
+  else if(STALE)h+=`<div class="banner"><p>Encara no s'ha pogut connectar amb la base de dades. Les dades poden no estar actualitzades.</p></div>`;
+  return h;
+}
+const isVencuda=f=>f.estat==='Vençuda'||(f.estat==='Pendent'&&f.venciment&&f.venciment<today());
+function viewHtml(r){
+  if(!LOCAL&&!COLS.every(c=>loaded[c]))return `<div class="loading">Carregant dades de l'empresa…</div>`;
+  if(r.v==='tauler')return dashHtml();
+  if(r.v==='obra')return obraHtml(r.id);
+  if(r.v==='documents')return docsHtml(null);
+  return listPage(r.v);
+}
+
+/* ---------- Dashboard ---------- */
+function dashHtml(){
+  const t=today();
+  const actives=S.obres.filter(o=>['En execució','Preparació','Aturada','Recepció provisional'].includes(o.estat));
+  const exec=S.obres.filter(o=>o.estat==='En execució');
+  const cartera=sum(actives,o=>(+o.pressupost||0)*(1-(+o.avanc||0)/100));
+  const pend=S.factures.filter(f=>f.sentit==='Emesa'&&['Pendent','Vençuda'].includes(f.estat));
+  const vencEm=pend.filter(isVencuda);
+  const opp=S.oportunitats.filter(o=>['Detectada','En estudi','Ofertada'].includes(o.estat));
+  const pond=sum(opp,o=>(+o.import||0)*(+o.probabilitat||0)/100);
+  const hasEx=COLS.some(c=>S[c].some(x=>x.exemple));
+  const att=[];
+  S.factures.filter(isVencuda).forEach(f=>att.push({tone:'bad',tx:`Factura ${f.sentit==='Emesa'?'emesa':'rebuda'} vençuda · ${f.num||''}`,sub:`${f.tercer||''} · ${fmtM(totF(f).total)} · venç. ${fmtD(f.venciment)}`,mk:'factures',id:f.id}));
+  S.tasques.filter(x=>x.estat==='Bloquejada').forEach(x=>att.push({tone:'bad',tx:`Tasca bloquejada: ${x.titol}`,sub:obraTxt(x.obraId),mk:'tasques',id:x.id}));
+  S.tasques.filter(x=>x.estat!=='Feta'&&x.estat!=='Bloquejada'&&x.limit&&x.limit<t).forEach(x=>att.push({tone:'warn',tx:`Tasca fora de termini: ${x.titol}`,sub:`${obraTxt(x.obraId)} · límit ${fmtD(x.limit)}`,mk:'tasques',id:x.id}));
+  S.comandes.filter(c=>c.estat==='Sol·licitada').forEach(c=>att.push({tone:'info',tx:`Comanda per aprovar · ${c.num}`,sub:`${c.proveidor||''} · ${fmtM(c.import)}`,mk:'comandes',id:c.id}));
+  S.actius.filter(a=>a.revisio&&a.revisio<=addDays(30)&&a.estat!=='Baixa').forEach(a=>att.push({tone:a.revisio<t?'bad':'warn',tx:`Revisió de ${a.nom}`,sub:`${a.codi||''} · ${fmtD(a.revisio)}`,mk:'actius',id:a.id}));
+  S.fitxers.filter(f=>f.estat==='En revisió'&&!f.paperera).forEach(f=>att.push({tone:'warn',tx:`Document per revisar: ${f.nom}`,sub:`${ownerTxt(f.owner)} / ${f.carpeta}`,doc:f.id}));
+  const exp30=addDays(30);S.tercers.filter(x=>x.estat!=='No apte').forEach(x=>[['rc','Assegurança RC'],['ss','Certificat Seguretat Social'],['hisenda','Certificat Hisenda']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençut':'Venç'} el ${fmtD(x[kk])}`,mk:'tercers',id:x.id})}));S.personal.filter(x=>x.estat!=='Inactiu').forEach(x=>[['prl','Formació PRL'],['aptitud','Aptitud laboral'],['habilitacio','Habilitació']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençuda':'Venç'} el ${fmtD(x[kk])}`,mk:'personal',id:x.id})}));S.qualitat.filter(x=>x.estat!=='Tancada'&&(x.gravetat==='Greu'||(x.termini&&x.termini<t))).forEach(x=>att.push({tone:x.gravetat==='Greu'?'bad':'warn',tx:`${x.tipus}: ${x.descripcio}`,sub:`${obraTxt(x.obraId)}${x.termini?' · termini '+fmtD(x.termini):''}`,mk:'qualitat',id:x.id}));S.modificats.filter(x=>x.estat==='Presentat al client').forEach(x=>att.push({tone:'info',tx:`Modificat pendent de resposta · ${x.num||''}`,sub:`${obraTxt(x.obraId)} · ${fmtM(x.import)}`,mk:'modificats',id:x.id}));S.certificacions.filter(x=>x.estat==='Conformada').forEach(x=>att.push({tone:'warn',tx:`Certificació ${x.num} conformada: pendent de facturar`,sub:`${obraTxt(x.obraId)} · ${fmtM(certPer(x))} del període`,mk:'certificacions',id:x.id}));const recent=S.fitxers.filter(f=>!f.paperera).sort((a,b)=>String(b.actualitzat).localeCompare(String(a.actualitzat))).slice(0,6);
+  const dt=new Date().toLocaleDateString('ca-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  return `
+  ${hasEx&&CANWRITE?`<div class="banner"><p>Ara hi ha <b>dades d'exemple</b> (marcades com a exemple) perquè vegis com funciona l'Obrador. Quan comencis a entrar dades reals, pots esborrar-les.</p><button class="btn danger sm" data-act="wipeEx" id="wipeEx">Esborra les dades d'exemple</button></div>`:''}
+  <div class="head"><div><div class="eyebrow">${esc(dt)}</div><h1>Tauler de l'empresa</h1></div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Obres en execució</div><div class="v">${exec.length}</div><div class="s">${actives.length} obres actives en total</div></div>
+    <div class="kpi"><div class="l">Cartera pendent d'executar</div><div class="v">${fmtM(cartera)}</div><div class="s">Contracte × (100% − avanç)</div></div>
+    <div class="kpi"><div class="l">Pendent de cobrament</div><div class="v">${fmtM(sum(pend,f=>totF(f).total))}</div><div class="s">${vencEm.length?`<span style="color:var(--bad)">${fmtM(sum(vencEm,f=>totF(f).total))} vençut</span>`:'Res vençut'}</div></div>
+    <div class="kpi"><div class="l">Licitacions en curs</div><div class="v">${fmtM(pond)}</div><div class="s">Ponderat per probabilitat · ${opp.length} obertes</div></div>
+  </div>
+  <div class="grid2">
+    <div class="stack">
+      <section class="panel"><h2>Obres en curs<span class="sp"></span><a class="btn sm" href="#obres">Totes les obres</a></h2>
+      ${actives.length?`<div class="tw"><table><thead><tr><th>Obra</th><th>Estat</th><th>Avanç</th><th class="num">Contracte</th><th class="num">Certificat</th><th>Cost / certificat</th><th class="num">Marge</th></tr></thead><tbody>
+      ${actives.sort((a,b)=>String(a.codi).localeCompare(String(b.codi))).map(o=>{const f=fin(o.id);const ratio=f.certificat?f.cost/f.certificat:0;
+        return `<tr data-act="goObra" data-id="${esc(o.id)}"><td class="t-main"><div class="code">${esc(o.codi)}</div>${esc(o.nom)}</td><td>${pill(o.estat)}</td>
+        <td>${progHtml(+o.avanc||0)}</td><td class="num">${fmtM(f.pec)}</td><td class="num">${fmtM(f.certificat)}</td>
+        <td><div class="bar c ${ratio>1?'over':''}" title="${Math.round(ratio*100)}%"><i style="width:${Math.min(100,ratio*100)}%"></i></div></td>
+        <td class="num" style="color:${f.marge==null?'var(--muted)':f.marge<0?'var(--bad)':'var(--ok)'}">${f.marge==null?'—':(f.marge*100).toFixed(1)+'%'}</td></tr>`}).join('')}
+      </tbody></table></div>`:emptyHtml('Cap obra activa','Dona d\'alta la primera obra per començar a planificar, documentar i facturar.','obres')}
+      </section>
+      <section class="panel"><h2>Documents recents<span class="sp"></span><a class="btn sm" href="#documents">Obre Documents</a></h2>
+      ${recent.length?`<ul class="alist">${recent.map(f=>`<li data-act="openDoc" data-id="${esc(f.id)}">${ficon(f.nom)}<div class="tx"><div>${esc(f.nom)}</div><small>${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)} · v${(f.versions||[]).length||1} · ${fmtDT(f.actualitzat)}</small></div>${pill(f.estat)}</li>`).join('')}</ul>`:`<div class="empty">Encara no s'ha pujat cap document.</div>`}
+      </section>
+    </div>
+    <div class="stack">
+      <section class="panel"><h2>Requereix atenció<span class="sp"></span><span class="code">${att.length}</span></h2>
+      ${att.length?`<ul class="alist">${att.slice(0,12).map(a=>`<li ${a.doc?`data-act="openDoc" data-id="${esc(a.doc)}"`:`data-act="edit" data-mk="${a.mk}" data-id="${esc(a.id)}"`} class="t-${a.tone}"><span class="dot"></span><div class="tx">${esc(a.tx)}<small>${esc(a.sub)}</small></div></li>`).join('')}</ul>`:`<div class="empty">Tot al dia. No hi ha venciments ni bloquejos.</div>`}
+      </section>
+      <section class="panel"><h2>Activitat</h2>
+      ${S.registre.length?`<ul class="alist feed">${S.registre.slice(0,10).map(e=>`<li><div class="tx">${esc(e.txt)}<small>${esc(nm(e.u))} · ${fmtDT(e.t)}</small></div></li>`).join('')}</ul>`:`<div class="empty">Aquí apareixeran els canvis de l'equip.</div>`}
+      </section>
+    </div>
+  </div>`;
+}
+const obraTxt=id=>{const o=obra(id);return o?`${o.codi} ${o.nom}`:'Sense obra'};
+const ownerTxt=ow=>ow==='empresa'?'Empresa':obraTxt(ow);
+const progHtml=p=>`<div class="prog"><div class="bar" style="flex:1"><i style="width:${Math.max(0,Math.min(100,p))}%"></i></div><span class="mono">${Math.round(p)}%</span></div>`;
+function emptyHtml(t,s,mk,def){return `<div class="empty"><b>${esc(t)}</b>${esc(s)}${mk&&CANWRITE?`<div><button class="btn pri" data-act="new" data-mk="${mk}" ${def?`data-def='${esc(JSON.stringify(def))}'`:''}>+ Nova ${M[mk].s}</button></div>`:''}</div>`}
+
+/* ---------- Generic list ---------- */
+function listPage(mk){
+  const m=M[mk];
+  return `<div class="head"><div><div class="eyebrow">${['tasques','parts','obres'].includes(mk)?'Obra':'Gestió'}</div><h1>${m.t}</h1></div><span class="sp"></span>
+  ${CANWRITE?`<button class="btn pri" data-act="new" data-mk="${mk}">+ Nova ${m.s}</button>`:''}</div>${listHtml(mk,null)}`;
+}
+function cellVal(mk,c,r){
+  if(typeof c==='object')return{h:c.f(r),num:c.num};
+  const f=M[mk].camps.find(x=>x.k===c);const v=r[c];
+  if(!f)return{h:esc(v)};
+  if(f.tp==='obra')return{h:v?obraLbl(v):(f.none?`<span class="muted">${f.none}</span>`:'<span class="muted">—</span>')};
+  if(f.tp==='money')return{h:fmtM(v),num:1};
+  if(f.tp==='pct')return c==='avanc'?{h:progHtml(+v||0)}:{h:(v==null||v==='')?'—':(+v)+'%',num:1};
+  if(f.tp==='num')return{h:v==null||v===''?'—':esc(v),num:1};
+  if(f.tp==='date')return{h:fmtD(v)};
+  if(f.tp==='code')return{h:`<span class="code">${esc(v)}</span>`};
+  if(c==='estat'||c==='prioritat')return{h:pill(v)};
+  if(f.tp==='area')return{h:`<span class="muted">${esc(String(v||'').slice(0,60))}${String(v||'').length>60?'…':''}</span>`};
+  return{h:esc(v)};
+}
+function listHtml(mk,fixedObra){
+  const m=M[mk],st=mv(mk);const hasObra=m.camps.some(f=>f.k==='obraId');const estF=m.camps.find(f=>f.k==='estat');
+  const sid=fixedObra?'o':'';
+  let rows=S[mk].slice();
+  if(fixedObra)rows=rows.filter(r=>r.obraId===fixedObra);
+  else if(st.obra)rows=rows.filter(r=>r.obraId===st.obra);
+  if(st.estat)rows=rows.filter(r=>r.estat===st.estat);
+  if(st.q){const q=st.q.toLowerCase();rows=rows.filter(r=>m.camps.some(f=>String(f.tp==='obra'?obraTxt(r[f.k]):r[f.k]||'').toLowerCase().includes(q)))}
+  const sk=m.camps.find(f=>f.tp==='date')?.k;
+  rows.sort((a,b)=>sk&&['parts','factures','comandes','qualitat'].includes(mk)?String(b[sk]||'').localeCompare(String(a[sk]||'')):String(a[m.sort||m.camps[0].k]||'').localeCompare(String(b[m.sort||m.camps[0].k]||''),'ca',{numeric:true}));
+  const kan=m.kanban&&st.mode==='kanban';
+  const def=fixedObra?{obraId:fixedObra}:null;
+  let tools=`<div class="tools"><input type="search" id="q-${mk}${sid}" placeholder="Cerca a ${m.t.toLowerCase()}…" value="${esc(st.q)}" data-bind="q" data-mk="${mk}" aria-label="Cerca">
+   ${hasObra&&!fixedObra?`<select id="fo-${mk}" data-bind="obra" data-mk="${mk}" aria-label="Filtra per obra"><option value="">Totes les obres</option>${obraOpts(st.obra)}</select>`:''}
+   ${estF&&!kan?`<select id="fe-${mk}${sid}" data-bind="estat" data-mk="${mk}" aria-label="Filtra per estat"><option value="">Tots els estats</option>${estF.o.map(o=>`<option ${o===st.estat?'selected':''}>${esc(o)}</option>`).join('')}</select>`:''}
+   <span style="flex:1"></span>
+   ${m.kanban?`<div class="seg"><button data-act="mode" data-mk="${mk}" data-v="kanban" class="${kan?'on':''}">Tauler</button><button data-act="mode" data-mk="${mk}" data-v="taula" class="${kan?'':'on'}">Llista</button></div>`:''}
+   ${fixedObra&&CANWRITE?`<button class="btn pri sm" data-act="new" data-mk="${mk}" data-def='${esc(JSON.stringify(def))}'>+ Nova ${m.s}</button>`:''}
+  </div>`;
+  let summary='';
+  if(mk==='factures'){const em=rows.filter(f=>f.sentit==='Emesa'),re=rows.filter(f=>f.sentit==='Rebuda');summary=`<div class="tools muted" style="font-size:13px">Emeses: <b class="mono" style="color:var(--ink)">${fmtM(sum(em,f=>totF(f).total))}</b> · Rebudes: <b class="mono" style="color:var(--ink)">${fmtM(sum(re,f=>totF(f).total))}</b> · ${rows.length} factures</div>`}
+  if(mk==='parts'){summary=`<div class="tools muted" style="font-size:13px">${sum(rows,p=>+p.hores)} h · cost de mà d'obra, dietes i desplaçaments <b class="mono" style="color:var(--ink)">${fmtM(sum(rows,costPart))}</b></div>`}
+  if(mk==='comandes'){summary=`<div class="tools muted" style="font-size:13px">Compromès (aprovat o rebut): <b class="mono" style="color:var(--ink)">${fmtM(sum(rows.filter(c=>['Aprovada','Rebuda'].includes(c.estat)),c=>+c.import))}</b></div>`}
+  if(!S[mk].filter(r=>!fixedObra||r.obraId===fixedObra).length)return tools.replace(/<input[^>]*>/,'').replace(/<select[\s\S]*?<\/select>/g,'')+emptyHtml(`Encara no hi ha cap ${m.s}`,fixedObra?'Aquesta obra encara no en té cap.':'Crea el primer registre per començar.',mk,def);
+  if(kan){
+    return tools+summary+`<div class="kan">${estF.o.map(e=>{const its=rows.filter(r=>(r.estat||estF.o[0])===e);
+      return `<div class="col" data-drop="${esc(e)}" data-mk="${mk}"><header><span>${pill(e)}</span><span class="code">${its.length}${m.camps.some(f=>f.k==='import')?' · '+fmtM(sum(its,r=>+r.import)):''}</span></header>
+      ${its.map(r=>`<div class="card" draggable="${CANWRITE}" data-act="edit" data-mk="${mk}" data-id="${esc(r.id)}"><div>${esc(r[m.tit]||r.nom||'(sense títol)')}</div>
+      <div class="m"><span>${r.obraId?esc(obra(r.obraId)?.codi||''):esc(r.client||r.proveidor||'')}</span><span class="mono">${r.import?fmtM(r.import):r.limit?fmtD(r.limit):r.presentacio?fmtD(r.presentacio):''}</span></div>
+      ${r.prioritat==='Alta'?`<div>${pill('Alta')}</div>`:''}${mk==='oportunitats'&&r.probabilitat?`<div class="m"><span>Probabilitat</span><span class="mono">${r.probabilitat}%</span></div>`:''}</div>`).join('')}</div>`}).join('')}</div>`;
+  }
+  const cols=m.cols.filter(c=>!(fixedObra&&c==='obraId'));
+  const hd=c=>typeof c==='object'?c:{l:M[mk].camps.find(f=>f.k===c)?.l||c,num:['money','num'].includes(M[mk].camps.find(f=>f.k===c)?.tp)||['probabilitat'].includes(c)};
+  return tools+summary+`<div class="tw"><table><thead><tr>${cols.map(c=>{const h=hd(c);return `<th class="${h.num?'num':''}">${esc(h.l.replace(/ \(.*\)$/,''))}</th>`}).join('')}</tr></thead><tbody>
+  ${rows.length?rows.map(r=>`<tr data-act="${mk==='obres'?'goObra':'edit'}" data-mk="${mk}" data-id="${esc(r.id)}">${cols.map((c,i)=>{const v=cellVal(mk,c,r);return `<td class="${v.num?'num':''} ${i===0||c===m.tit?'t-main':''}">${v.h}${i===0&&r.exemple?' <span class="pill t-neu" title="Dada d\'exemple">exemple</span>':''}</td>`}).join('')}</tr>`).join(''):`<tr><td colspan="${cols.length}" class="empty">Cap resultat amb aquests filtres.</td></tr>`}
+  </tbody></table></div>`;
+}
+const obraOpts=(sel,none)=>(none?`<option value="">${esc(none)}</option>`:'')+S.obres.slice().sort((a,b)=>String(a.codi).localeCompare(String(b.codi))).map(o=>`<option value="${esc(o.id)}" ${o.id===sel?'selected':''}>${esc(o.codi)} · ${esc(o.nom)}</option>`).join('');
+
+/* ---------- Obra detail ---------- */
+function obraHtml(id){
+  const o=obra(id);if(!o)return `<div class="empty"><b>No s'ha trobat aquesta obra</b>Potser s'ha eliminat. <div><a class="btn" href="#obres">Torna a Obres</a></div></div>`;
+  const f=fin(id);const tabs=[['resum','Resum'],['control','Control'],['partides','Partides'],['certificacions','Certificacions'],['modificats','Modificats'],['tasques','Planificació'],['ofertes','Comparatius'],['comandes','Compres'],['factures','Facturació'],['parts','Parts'],['qualitat','Qualitat i PRL'],['docs','Documents']];
+  const tb=V.obraTab;
+  let body='';
+  if(tb==='resum'){
+    const ts=S.tasques.filter(t=>t.obraId===id);
+    const byF=FASES.map(fs=>{const a=ts.filter(t=>t.fase===fs);return{fs,n:a.length,d:a.filter(t=>t.estat==='Feta').length,b:a.some(t=>t.estat==='Bloquejada')}}).filter(x=>x.n);
+    const nd=S.fitxers.filter(x=>x.owner===id&&!x.paperera).length;
+    body=`<div class="grid2"><section class="panel"><h2>Avanç per fases</h2><div class="pb">${byF.length?`<table><tbody>${byF.map(x=>`<tr style="cursor:default"><td style="width:40%">${esc(x.fs)} ${x.b?pill('Bloquejada'):''}</td><td>${progHtml(x.d/x.n*100)}</td><td class="num code">${x.d}/${x.n}</td></tr>`).join('')}</tbody></table>`:`<div class="muted">Encara no hi ha tasques planificades.</div>`}</div></section>
+    <section class="panel"><h2>Fitxa</h2><div class="pb"><dl class="meta">
+      <dt>Client</dt><dd>${esc(o.client||'—')}</dd><dt>Ubicació</dt><dd>${esc(o.ubicacio||'—')}</dd><dt>Tipologia</dt><dd>${esc(o.tipus||'—')}</dd>
+      <dt>Cap d'obra</dt><dd>${esc(o.cap||'—')}</dd><dt>Superfície</dt><dd class="mono">${o.superficie?esc(o.superficie)+' m²':'—'}</dd>
+      <dt>Termini</dt><dd>${fmtD(o.inici)} → ${fmtD(o.fi)}</dd><dt>Ràtio</dt><dd class="mono">${o.superficie&&f.pec?fmtM(f.pec/o.superficie)+'/m²':'—'}</dd>
+      <dt>Documents</dt><dd>${nd} fitxers</dd><dt>Cost compres</dt><dd class="mono">${fmtM(f.compres)}</dd><dt>Cost mà d'obra</dt><dd class="mono">${fmtM(f.ma)}</dd>
+    </dl></div></section></div>`;
+  }else if(tb==='control')body=controlHtml(id);else if(tb==='docs')body=docsHtml(id);
+  else body=listHtml(tb,id);
+  return `<div class="crumb"><a href="#obres">Obres</a> / <span class="code">${esc(o.codi)}</span></div>
+  <div class="head"><div><h1>${esc(o.nom)}</h1><div class="muted" style="margin-top:4px">${esc(o.client||'')}${o.ubicacio?' · '+esc(o.ubicacio):''}</div></div>${pill(o.estat)}<span class="sp"></span>
+  ${CANWRITE?`<button class="btn" data-act="edit" data-mk="obres" data-id="${esc(id)}">Edita l'obra</button>`:''}</div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Contracte</div><div class="v">${fmtM(f.pec)}</div><div class="s">Avanç declarat ${+o.avanc||0}%</div></div>
+    <div class="kpi"><div class="l">Certificat</div><div class="v">${fmtM(f.certificat)}</div><div class="s">${f.pec?((f.certificat/f.pec)*100).toFixed(1)+'% del contracte':'—'} · cobrat ${fmtM(f.cobrat)}</div></div>
+    <div class="kpi"><div class="l">Cost real</div><div class="v">${fmtM(f.cost)}</div><div class="s">Compres ${fmtM(f.compres)} · M.O. ${fmtM(f.ma)}</div></div>
+    <div class="kpi"><div class="l">Marge sobre certificat</div><div class="v" style="color:${f.marge==null?'inherit':f.marge<0?'var(--bad)':'var(--ok)'}">${f.marge==null?'—':(f.marge*100).toFixed(1)+'%'}</div><div class="s">${fmtM(f.certificat-f.cost)}</div></div>
+  </div>
+  <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" aria-selected="${k===tb}" class="${k===tb?'on':''}" data-act="otab" data-v="${k}">${l}</button>`).join('')}</div>${body}`;
+}
+
+/* ---------- Documents (file server) ---------- */
+function folderKey(ow,c){return ow+'|'+c}
+function docsHtml(onlyObra){
+  const files=S.fitxers;
+  const cnt={};files.forEach(f=>{if(!f.paperera){const k=folderKey(f.owner,f.carpeta);cnt[k]=(cnt[k]||0)+1}});
+  const cur=onlyObra?(V.obraDocFolder[onlyObra]||folderKey(onlyObra,CARP_OBRA[0])):V.docFolder;
+  const fitem=(ow,c)=>{const k=folderKey(ow,c);return `<div class="f ${k===cur?'on':''}" data-act="folder" data-k="${esc(k)}" data-o="${onlyObra?esc(onlyObra):''}" tabindex="0">${esc(c)}<i>${cnt[k]||''}</i></div>`};
+  let tree='';
+  if(onlyObra){tree=CARP_OBRA.map(c=>fitem(onlyObra,c)).join('')}
+  else{
+    tree=`<details open><summary>Empresa</summary>${CARP_EMP.map(c=>fitem('empresa',c)).join('')}</details>`+
+    S.obres.slice().sort((a,b)=>String(a.codi).localeCompare(String(b.codi))).map(o=>`<details ${cur.startsWith(o.id+'|')?'open':''}><summary><span class="code">${esc(o.codi)}</span> ${esc(o.nom)}</summary>${CARP_OBRA.map(c=>fitem(o.id,c)).join('')}</details>`).join('')+
+    `<div class="f root ${cur==='paperera'?'on':''}" data-act="folder" data-k="paperera" data-o="" tabindex="0">Paperera<i>${files.filter(f=>f.paperera).length||''}</i></div>`;
+  }
+  const q=onlyObra?'':V.docQ.trim().toLowerCase();
+  let list,title,crumb;
+  if(q){list=files.filter(f=>!f.paperera&&(String(f.nom).toLowerCase().includes(q)||String(f.etiquetes||'').toLowerCase().includes(q)||ownerTxt(f.owner).toLowerCase().includes(q)));title=`Resultats per «${esc(V.docQ)}»`;crumb='Cerca a tots els documents'}
+  else if(cur==='paperera'){list=files.filter(f=>f.paperera);title='Paperera';crumb='Documents eliminats. Es poden restaurar.'}
+  else{const [ow,c]=cur.split('|');list=files.filter(f=>!f.paperera&&f.owner===ow&&f.carpeta===c);title=esc(c);crumb=esc(ownerTxt(ow))}
+  list.sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'ca'));
+  const canUp=!!ASSETS&&CANWRITE&&!q&&cur!=='paperera';
+  return `${onlyObra?'':`<div class="head"><div><div class="eyebrow">Servidor de fitxers</div><h1>Documents</h1></div><span class="sp"></span>
+    <input type="search" id="docq" data-bind="docq" placeholder="Cerca per nom, etiqueta o obra…" value="${esc(V.docQ)}" aria-label="Cerca documents" style="border:1px solid var(--line);background:var(--surface);border-radius:5px;padding:7px 10px;width:280px;max-width:100%"></div>`}
+  <div class="docs"><nav class="tree" aria-label="Carpetes">${tree}</nav>
+  <div style="min-width:0"><div class="crumb">${crumb}</div><div class="head" style="margin-bottom:10px"><h1 style="font-size:20px">${title}</h1><span class="sp"></span>
+    ${canUp?`<label class="btn pri" for="up-${onlyObra||'g'}">Puja fitxers</label><input type="file" id="up-${onlyObra||'g'}" multiple hidden data-up="${esc(cur)}">`:''}</div>
+  ${canUp?`<div class="drop" data-dropf="${esc(cur)}">Arrossega fitxers aquí per pujar-los a aquesta carpeta. Si un fitxer ja existeix amb el mateix nom, es desa com a versió nova.</div>`:
+    (!ASSETS&&!q&&cur!=='paperera'&&!LOCAL?`<div class="drop">Pujar fitxers requereix permís d'edició en aquesta vista. Pots consultar i descarregar els documents.</div>`:'')}
+  ${list.length?`<div class="tw"><table><thead><tr><th>Nom</th>${q?'<th>Ubicació</th>':''}<th>Estat</th><th class="num">Versió</th><th class="num">Mida</th><th>Modificat</th><th>Per</th></tr></thead><tbody>
+  ${list.map(f=>{const v=curVer(f);return `<tr data-act="openDoc" data-id="${esc(f.id)}"><td class="t-main"><span style="display:flex;align-items:center">${ficon(f.nom)}<span style="min-width:0;overflow-wrap:anywhere">${esc(f.nom)}${f.etiquetes?`<br><span class="muted" style="font-size:12px">${esc(f.etiquetes)}</span>`:''}</span></span></td>
+   ${q?`<td class="muted" style="font-size:12.5px">${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)}</td>`:''}<td>${pill(f.estat)}</td><td class="num mono">v${(f.versions||[]).length||1}</td><td class="num mono">${fmtSize(v&&v.mida)}</td><td>${fmtDT(f.actualitzat)}</td><td>${esc(nm(v&&v.per||f.actualitzatPer))}</td></tr>`}).join('')}
+  </tbody></table></div>`:`<div class="empty"><b>${cur==='paperera'&&!q?'La paperera és buida':'Carpeta buida'}</b>${q?'Cap document coincideix amb la cerca.':cur==='paperera'?'':'Puja-hi plànols, actes, certificacions o fotografies d\'obra.'}</div>`}
+  </div></div>`;
+}
+async function uploadFiles(fl,folder,intoId){
+  if(!ASSETS){toast('No tens permís per pujar fitxers.');return}
+  const [ow,carp]=folder.split('|');
+  for(const file of fl){
+    const ext=fext(file.name);const type=OKT[ext];
+    if(!type){toast(`«${file.name}»: format no admès. Formats acceptats: PDF, imatges, vídeo MP4/WebM, CSV, TXT, JSON, MD.`);continue}
+    if(file.size>20*1048576){toast(`«${file.name}» supera el límit de 20 MB.`);continue}
+    toast(`Pujant ${file.name}…`);
+    try{
+      const r=await ASSETS.upload(file,{type});
+      const ver={asset:r.id,nom:file.name,mida:r.sizeBytes,tipus:r.contentType,data:new Date().toISOString(),per:ME&&ME.id||null};
+      let ex=intoId?S.fitxers.find(f=>f.id===intoId):S.fitxers.find(f=>!f.paperera&&f.owner===ow&&f.carpeta===carp&&f.nom===file.name);
+      if(ex){const nv=[...(ex.versions||[]),ver];const {id,...rest}=ex;await save('fitxers',ex.id,{...rest,versions:nv,estat:ex.estat==='Aprovat'?'En revisió':ex.estat});logA(`Nova versió v${nv.length} de ${ex.nom}`);toast(`${ex.nom}: desada la versió v${nv.length}.`);if(intoId)openDoc(intoId)}
+      else{const id=newId('f');await save('fitxers',id,{nom:file.name,owner:ow,carpeta:carp,estat:'Esborrany',etiquetes:'',versions:[ver]});logA(`Pujat ${file.name} a ${ownerTxt(ow)} / ${carp}`);toast(`Pujat: ${file.name}`)}
+    }catch(e){
+      const c=e&&e.code;
+      toast(c==='too_large'?`«${file.name}» és massa gran.`:c==='unsupported_type'?`«${file.name}»: format no admès.`:c==='quota_or_state'?"L'espai d'emmagatzematge és ple.":c==='rate_limited'?'Massa pujades seguides. Espera uns segons.':`No s'ha pogut pujar «${file.name}».`);
+    }
+  }
+}
+
+/* ---------- Drawers ---------- */
+function closeDrawer(){$('#drawerHost').innerHTML='';if(location.hash.startsWith('#doc-'))history.replaceState(null,'','#documents')}
+function drawer(title,body,foot){
+  $('#drawerHost').innerHTML=`<div class="scrim" data-act="close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><h3></h3><button class="x" data-act="close" aria-label="Tanca">×</button></header><div class="body">${body}</div>${foot?`<footer>${foot}</footer>`:''}</aside>`;
+  $('#drawerHost h3').textContent=title;
+  const first=$('#drawerHost .body input,#drawerHost .body select,#drawerHost .body textarea');if(first)first.focus();else $('#drawerHost .x').focus();
+}
+function fieldHtml(f,v){
+  const id='fld-'+f.k;const ro=CANWRITE?'':'disabled';
+  let inp;
+  if(f.tp==='sel')inp=`<select id="${id}" name="${f.k}" ${ro}>${(f.o.includes(v)?f.o:[v,...f.o]).map(o=>`<option value="${esc(o)}" ${o===v?'selected':''}>${esc(o.trim()||'—')}</option>`).join('')}</select>`;
+  else if(f.tp==='obra')inp=`<select id="${id}" name="${f.k}" ${ro}>${obraOpts(v,f.none||'— Sense obra —')}</select>`;
+  else if(f.tp==='area')inp=`<textarea id="${id}" name="${f.k}" ${ro}>${esc(v)}</textarea>`;
+  else{const t=f.tp==='date'?'date':['money','num','pct'].includes(f.tp)?'number':'text';
+    inp=`<input id="${id}" name="${f.k}" type="${t}" ${t==='number'?`step="${f.tp==='money'?'0.01':'any'}" ${f.tp==='pct'?'min="0" max="100"':''}`:''} value="${esc(v)}" ${f.ph?`placeholder="${esc(f.ph)}"`:''} ${f.req?'required':''} ${ro} ${f.tp==='code'?'class="mono"':''}>`}
+  return `<div class="fld ${f.w?'w':''}"><label for="${id}">${esc(f.l)}${f.req?' *':''}</label>${inp}</div>`;
+}
+function openForm(mk,id,def){
+  const m=M[mk];const r=id?S[mk].find(x=>x.id===id):null;if(id&&!r)return;
+  const base=r?{...r}:{...def};
+  if(!r){m.camps.forEach(f=>{if(base[f.k]==null){if(f.tp==='sel')base[f.k]=f.o[0];if(f.tp==='date'&&['data','inici'].includes(f.k))base[f.k]=today()}});
+    if(m.pref)base[m.camps[0].k]=nextCode(mk);
+    if(mk==='factures'){base.retencio=base.retencio??5;base.venciment=addDays(60)}
+    if(mk==='parts'){base.hores=8;base.preuHora=base.preuHora??24}}
+  const body=`<form id="frm" data-mk="${mk}" data-id="${esc(id||'')}" class="fgrid" novalidate>${m.camps.map(f=>fieldHtml(f,base[f.k]??'')).join('')}</form>
+   ${mk==='factures'?'<div class="calc" id="calc"></div>':''}
+   ${mk==='factures'?'<div class="muted" style="font-size:12.5px">ISP: factures de subcontractistes d\'obra sense IVA repercutit (art. 84.U.2º.f LIVA). La retenció de garantia es descompta del total a cobrar o pagar.</div>':''}
+   ${r&&r.exemple?'<div class="muted" style="font-size:12.5px">Aquest registre és una dada d\'exemple.</div>':''}
+   ${r?`<div class="muted" style="font-size:12px">Darrera modificació: ${fmtDT(r.actualitzat)}</div>`:''}`;
+  const foot=CANWRITE?`${r?`<button class="btn danger" data-act="del" data-mk="${mk}" data-id="${esc(id)}" id="delbtn">Elimina</button>`:''}<span class="sp"></span><button class="btn" data-act="close">Cancel·la</button><button class="btn pri" data-act="saveForm">${r?'Desa els canvis':'Crea '+m.s}</button>`:`<span class="sp"></span><button class="btn" data-act="close">Tanca</button>`;
+  drawer(r?`${m.s[0].toUpperCase()+m.s.slice(1)}: ${r[m.tit]||r[m.camps[0].k]||''}`:`Nova ${m.s}`,body,foot);
+  if(mk==='factures')calcF();
+}
+function readForm(){const fm=$('#frm');const mk=fm.dataset.mk;const o={};M[mk].camps.forEach(f=>{const el=fm.elements[f.k];if(!el)return;let v=el.value;if(['money','num','pct'].includes(f.tp))v=v===''?null:+v;o[f.k]=v});return{mk,id:fm.dataset.id,o}}
+function calcF(){const c=$('#calc');if(!c)return;const {o}=readForm();const t=totF(o);c.innerHTML=`<span>Base imposable</span><b>${MF2.format(t.base)}</b><span>IVA ${String(o.iva).startsWith('ISP')?'(ISP, 0 €)':esc(o.iva)}</span><b>${MF2.format(t.iva)}</b><span>Retenció de garantia ${+o.retencio||0}%</span><b>−${MF2.format(t.ret)}</b><span style="font-weight:600">Total a ${o.sentit==='Rebuda'?'pagar':'cobrar'}</span><b>${MF2.format(t.total)}</b>`}
+async function saveForm(){
+  const {mk,id,o}=readForm();const m=M[mk];
+  const miss=m.camps.filter(f=>f.req&&(o[f.k]==null||o[f.k]===''));
+  if(miss.length){toast(`Falta omplir: ${miss.map(f=>f.l).join(', ')}.`);const el=$('#fld-'+miss[0].k);el&&el.focus();return}
+  const prev=id?S[mk].find(x=>x.id===id):null;const nid=id||newId(mk.slice(0,2));
+  const body={...(prev||{}),...o};delete body.id;
+  try{await save(mk,nid,body)}catch(e){return}
+  const lbl=o[m.tit]||o[m.camps[0].k]||m.s;
+  if(!prev)logA(`Nova ${m.s}: ${lbl}`);else if(prev.estat!==o.estat&&o.estat)logA(`${m.s[0].toUpperCase()+m.s.slice(1)} «${lbl}» → ${o.estat}`);else logA(`Actualitzada ${m.s}: ${lbl}`);
+  closeDrawer();toast(prev?'Canvis desats.':`${m.s[0].toUpperCase()+m.s.slice(1)} creada.`);
+}
+async function openDoc(id){
+  let f=S.fitxers.find(x=>x.id===id);if(f&&window.ObradorSigna){try{await window.ObradorSigna((f.versions||[]).map(v=>v.asset).filter(Boolean))}catch(e){toast("No s'han pogut preparar els fitxers.")}f=S.fitxers.find(x=>x.id===id)}if(!f){toast("Aquest document no existeix o s'ha eliminat.");return}
+  const v=curVer(f);const src=v&&v.asset?window.ObradorBlob(v.asset):null;const isImg=v&&/^image\//.test(v.tipus||'');const isVid=v&&/^video\//.test(v.tipus||'');
+  const prev=src?(isImg?`<div class="prev"><img src="${src}" alt="${esc(f.nom)}"></div>`:isVid?`<div class="prev"><video src="${src}" controls></video></div>`:`<div class="prev" style="min-height:80px">${ficon(f.nom)}<a class="btn sm" href="${src}" target="_blank" rel="noopener">Obre el fitxer en una pestanya nova</a></div>`)
+    :`<div class="prev muted" style="min-height:70px;padding:12px;text-align:center">Registre sense fitxer adjunt${f.exemple?' (document d\'exemple)':''}.</div>`;
+  const ro=CANWRITE&&!f.paperera?'':'disabled';
+  const [o0]=[f.owner];
+  const body=`${prev}
+  <dl class="meta"><dt>Ubicació</dt><dd>${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)}</dd><dt>Estat</dt><dd>${pill(f.estat)}${f.aprovatPer&&f.estat==='Aprovat'?` <span class="muted">per ${esc(nm(f.aprovatPer))} · ${fmtD(f.aprovatData)}</span>`:''}</dd><dt>Versió actual</dt><dd class="mono">v${(f.versions||[]).length||1} · ${fmtSize(v&&v.mida)}</dd></dl>
+  <form id="dfrm" data-id="${esc(id)}" class="fgrid" novalidate>
+   <div class="fld w"><label for="d-nom">Nom</label><input id="d-nom" name="nom" value="${esc(f.nom)}" ${ro}></div>
+   <div class="fld"><label for="d-estat">Estat</label><select id="d-estat" name="estat" ${ro}>${DOC_ESTATS.map(s=>`<option ${s===f.estat?'selected':''}>${s}</option>`).join('')}</select></div>
+   <div class="fld"><label for="d-et">Etiquetes</label><input id="d-et" name="etiquetes" value="${esc(f.etiquetes||'')}" placeholder="p. ex. estructura, revisió B" ${ro}></div>
+   <div class="fld"><label for="d-ow">Obra / àmbit</label><select id="d-ow" name="owner" ${ro}><option value="empresa" ${o0==='empresa'?'selected':''}>Empresa</option>${obraOpts(f.owner)}</select></div>
+   <div class="fld"><label for="d-carp">Carpeta</label><select id="d-carp" name="carpeta" ${ro}>${(f.owner==='empresa'?CARP_EMP:CARP_OBRA).map(c=>`<option ${c===f.carpeta?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+  </form>
+  <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><b style="flex:1">Historial de versions</b>
+   ${ASSETS&&CANWRITE&&!f.paperera?`<label class="btn sm" for="upv">Puja versió nova</label><input type="file" id="upv" hidden data-upv="${esc(id)}">`:''}</div>
+   <ul class="vers">${(f.versions||[]).map((x,i)=>({x,i})).reverse().map(({x,i})=>`<li><span class="pill ${i===f.versions.length-1?'t-ok':'t-neu'}">v${i+1}</span><div class="tx">${esc(x.nom)}<br><span class="muted" style="font-size:12px">${esc(nm(x.per))} · ${fmtDT(x.data)} · ${fmtSize(x.mida)}</span></div>${x.asset?`<a class="btn sm" href="${esc(window.ObradorBlob(x.asset))}" target="_blank" rel="noopener">Obre</a>`:''}</li>`).join('')||'<li class="muted">Sense versions.</li>'}</ul></div>
+  <div class="muted" style="font-size:12.5px">Enllaç directe: mentre aquest document és obert, l'adreça de l'Obrador acaba en <span class="mono">#doc-${esc(id)}</span>. Comparteix-la amb qui ja tingui accés a l'Obrador.</div>`;
+  const foot=!CANWRITE?`<span class="sp"></span><button class="btn" data-act="close">Tanca</button>`:f.paperera
+   ?`${CANASSETADMIN||LOCAL?`<button class="btn danger" data-act="purge" data-id="${esc(id)}" id="purgebtn">Elimina definitivament</button>`:''}<span class="sp"></span><button class="btn pri" data-act="restore" data-id="${esc(id)}">Restaura</button>`
+   :`<button class="btn danger" data-act="trash" data-id="${esc(id)}">A la paperera</button>${f.estat!=='Aprovat'?`<button class="btn" data-act="approve" data-id="${esc(id)}">Aprova</button>`:''}<span class="sp"></span><button class="btn" data-act="close">Cancel·la</button><button class="btn pri" data-act="saveDoc">Desa</button>`;
+  drawer(f.nom,body,foot);
+  if(location.hash!=='#doc-'+id)history.replaceState(null,'','#doc-'+id);
+}
+async function docUpdate(id,patch,msg){const f=S.fitxers.find(x=>x.id===id);if(!f)return;const {id:_,...rest}=f;try{await save('fitxers',id,{...rest,...patch})}catch(e){return}if(msg)logA(msg);}
+
+/* ---------- Events ---------- */
+document.addEventListener('click',async e=>{
+  const a=e.target.closest('[data-act]');if(!a)return;
+  const act=a.dataset.act,mk=a.dataset.mk,id=a.dataset.id;
+  if(a.tagName==='A'&&act!=='goObra')return;
+  switch(act){
+    case'close':closeDrawer();break;
+    case'new':openForm(mk,null,a.dataset.def?JSON.parse(a.dataset.def):{});break;
+    case'edit':openForm(mk,id);break;
+    case'goObra':V.obraTab='resum';location.hash='obra-'+id;break;
+    case'otab':V.obraTab=a.dataset.v;paint();break;
+    case'mode':mv(mk).mode=a.dataset.v;paint();break;
+    case'saveForm':saveForm();break;
+    case'folder':if(a.dataset.o)V.obraDocFolder[a.dataset.o]=a.dataset.k;else{V.docFolder=a.dataset.k;V.docQ=''}paint();break;
+    case'openDoc':openDoc(id);break;
+    case'del':if(!a.classList.contains('arm')){a.classList.add('arm');a.textContent='Confirma: elimina';setTimeout(()=>{if(a.isConnected){a.classList.remove('arm');a.textContent='Elimina'}},4000);break}
+      {const r=S[mk].find(x=>x.id===id);try{await remove(mk,id)}catch(err){break}logA(`Eliminada ${M[mk].s}: ${r&&(r[M[mk].tit]||r[M[mk].camps[0].k])||''}`);closeDrawer();toast('Eliminat.');if(mk==='obres')location.hash='obres'}break;
+    case'saveDoc':{const fm=$('#dfrm');const f=S.fitxers.find(x=>x.id===fm.dataset.id);const p={nom:fm.elements.nom.value.trim()||f.nom,estat:fm.elements.estat.value,etiquetes:fm.elements.etiquetes.value.trim(),owner:fm.elements.owner.value,carpeta:fm.elements.carpeta.value};
+      if(p.estat==='Aprovat'&&f.estat!=='Aprovat'){p.aprovatPer=ME&&ME.id||null;p.aprovatData=today()}
+      await docUpdate(f.id,p,f.estat!==p.estat?`${p.nom} → ${p.estat}`:(f.owner!==p.owner||f.carpeta!==p.carpeta)?`Mogut ${p.nom} a ${ownerTxt(p.owner)} / ${p.carpeta}`:`Actualitzat ${p.nom}`);closeDrawer();toast('Document desat.');break}
+    case'approve':{const f=S.fitxers.find(x=>x.id===id);await docUpdate(id,{estat:'Aprovat',aprovatPer:ME&&ME.id||null,aprovatData:today()},`Aprovat ${f.nom}`);toast('Document aprovat.');openDoc(id);break}
+    case'trash':{const f=S.fitxers.find(x=>x.id===id);await docUpdate(id,{paperera:true},`${f.nom} enviat a la paperera`);closeDrawer();toast('Enviat a la paperera. Es pot restaurar des de Paperera.');break}
+    case'restore':{const f=S.fitxers.find(x=>x.id===id);await docUpdate(id,{paperera:false},`Restaurat ${f.nom}`);closeDrawer();toast('Document restaurat.');break}
+    case'purge':if(!a.classList.contains('arm')){a.classList.add('arm');a.textContent='Confirma: no es pot desfer';setTimeout(()=>{if(a.isConnected){a.classList.remove('arm');a.textContent='Elimina definitivament'}},4000);break}
+      {const f=S.fitxers.find(x=>x.id===id);try{if(ASSETS)for(const v of f.versions||[])if(v.asset)await ASSETS.delete(v.asset).catch(()=>{});await remove('fitxers',id)}catch(err){break}logA(`Eliminat definitivament ${f.nom}`);closeDrawer();toast('Document eliminat definitivament.');break}
+    case'wipeEx':if(!a.classList.contains('arm')){a.classList.add('arm');a.textContent='Confirma: esborra els exemples';setTimeout(()=>{if(a.isConnected){a.classList.remove('arm');a.textContent="Esborra les dades d'exemple"}},4000);break}
+      {a.disabled=true;let n=0;for(const c of COLS)for(const r of S[c].filter(x=>x.exemple)){try{await remove(c,r.id);n++}catch(err){}}
+      if(!LOCAL){try{await DB.doc('registre/recent').set({entrades:S.registre.filter(x=>!x.exemple)})}catch(err){}}
+      toast(`${n} registres d'exemple esborrats.`);break}
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$('#drawerHost').innerHTML)closeDrawer();
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-act="folder"],tr[data-act]')){e.preventDefault();e.target.click()}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.bind==='q'){mv(t.dataset.mk).q=t.value;paint()}
+  else if(t.dataset.bind==='docq'){V.docQ=t.value;paint()}
+  if(t.closest('#frm')&&$('#calc'))calcF();
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.bind==='obra'){mv(t.dataset.mk).obra=t.value;paint()}
+  else if(t.dataset.bind==='estat'){mv(t.dataset.mk).estat=t.value;paint()}
+  else if(t.dataset.up){uploadFiles([...t.files],t.dataset.up);t.value=''}
+  else if(t.dataset.upv){const f=S.fitxers.find(x=>x.id===t.dataset.upv);uploadFiles([...t.files],folderKey(f.owner,f.carpeta),f.id);t.value=''}
+  else if(t.id==='d-ow'){const c=$('#d-carp');const opts=t.value==='empresa'?CARP_EMP:CARP_OBRA;c.innerHTML=opts.map(x=>`<option>${esc(x)}</option>`).join('')}
+  if(t.closest('#frm')&&$('#calc'))calcF();
+});
+document.addEventListener('submit',e=>{e.preventDefault()});
+/* drag: kanban cards + file drop */
+let dragId=null,dragMk=null;
+document.addEventListener('dragstart',e=>{const c=e.target.closest&&e.target.closest('.card');if(c){dragId=c.dataset.id;dragMk=c.dataset.mk;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragId)}catch(x){}}});
+document.addEventListener('dragover',e=>{const col=e.target.closest&&e.target.closest('[data-drop]');const dz=e.target.closest&&e.target.closest('[data-dropf]');
+  if(col&&dragId){e.preventDefault();document.querySelectorAll('.col.over').forEach(x=>x!==col&&x.classList.remove('over'));col.classList.add('over')}
+  if(dz&&e.dataTransfer.types.includes('Files')){e.preventDefault();dz.classList.add('over')}});
+document.addEventListener('dragleave',e=>{const dz=e.target.closest&&e.target.closest('[data-dropf]');if(dz&&!dz.contains(e.relatedTarget))dz.classList.remove('over')});
+document.addEventListener('drop',async e=>{
+  const dz=e.target.closest&&e.target.closest('[data-dropf]');
+  if(dz){e.preventDefault();dz.classList.remove('over');uploadFiles([...e.dataTransfer.files],dz.dataset.dropf);return}
+  const col=e.target.closest&&e.target.closest('[data-drop]');document.querySelectorAll('.col.over').forEach(x=>x.classList.remove('over'));
+  if(col&&dragId){e.preventDefault();const r=S[dragMk].find(x=>x.id===dragId);const est=col.dataset.drop;const mk=dragMk;dragId=null;
+    if(r&&r.estat!==est){const {id,...rest}=r;try{await save(mk,r.id,{...rest,estat:est});logA(`${M[mk].s[0].toUpperCase()+M[mk].s.slice(1)} «${r[M[mk].tit]||''}» → ${est}`)}catch(x){}}}
+});
+document.addEventListener('dragend',()=>{dragId=null;document.querySelectorAll('.col.over').forEach(x=>x.classList.remove('over'))});
+window.addEventListener('hashchange',()=>{const r=route();if(r.v!=='documents'||!r.doc)closeDrawerSilently();paint();if(r.doc)openPending(r.doc);window.scrollTo(0,0)});
+function closeDrawerSilently(){$('#drawerHost').innerHTML=''}
+function openPending(id){const f=S.fitxers.find(x=>x.id===id);if(f){if(!f.paperera)V.docFolder=folderKey(f.owner,f.carpeta);paint();if(!$('#drawerHost').innerHTML)openDoc(id)}else V.pendingDoc=id}
+
+/* ---------- Boot ---------- */
+function goLocal(msg){LOCAL=true;LOCALMSG=msg;COLS.forEach(c=>loaded[c]=true);schedule()}
+async function boot(){
+  paint();
+  const c=window.claude;
+  if(!c||typeof c.use!=='function'){goLocal("Aquesta vista no té accés a la base de dades de l'Obrador: pots provar-lo, però els canvis no es desaran.");return}
+  const [db,user,assets]=await Promise.all([c.use('db'),c.use('user'),c.use('assets')]);
+  USER=user;ASSETS=assets;
+  if(user){ME=await user.me();const cw=await user.can('data.write');CANWRITE=cw!==false;const aw=await user.can('assets.write');CANASSETADMIN=aw===true||(aw===null&&!!ME.canEdit)}
+  if(!db){goLocal("Inicia sessió amb accés a aquest Obrador per veure i desar les dades de l'empresa. Ara els canvis no es desaran.");return}
+  DB=db;
+  const timer=setTimeout(()=>{STALE=true;COLS.forEach(k=>loaded[k]=true);schedule()},10000);
+  let confirmed=0;
+  const done=snap=>{if(!snap.metadata.fromCache&&++confirmed>=COLS.length){clearTimeout(timer);STALE=false}};
+  COLS.forEach(col=>{
+    db.collection(col).onSnapshot(snap=>{S[col]=snap.docs.map(d=>({...d.data(),id:d.id}));loaded[col]=true;done(snap);schedule();
+      if(col==='fitxers'&&V.pendingDoc){const p=V.pendingDoc;V.pendingDoc=null;setTimeout(()=>openPending(p),0)}},
+      err=>{loaded[col]=true;schedule();if(err&&err.code!=='revoked')toast('Algunes dades no es poden carregar ara mateix.')});
+  });
+  db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
+  const r=route();if(r.doc)V.pendingDoc=r.doc;
+}
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-gestio.js"></script>
+</body>
+</html>

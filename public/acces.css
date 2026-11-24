@@ -1,0 +1,16 @@
+body.bloquejat>*:not(#acces){display:none!important}
+#acces{min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:var(--side);box-sizing:border-box}
+.acces-caixa{width:100%;max-width:380px;box-sizing:border-box;background:var(--surface);color:var(--ink);border-top:5px solid var(--accent);border-radius:6px;padding:28px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.acces-caixa [hidden]{display:none}
+.acces-marca{font-family:Archivo,sans-serif;font-stretch:115%;font-weight:750;letter-spacing:.01em;color:var(--muted)}
+.acces-caixa h1{font-family:Archivo,sans-serif;font-size:24px;margin:0;line-height:1.15}
+.acces-text{margin:0;color:var(--muted)}
+.acces-camps{display:flex;flex-direction:column;gap:12px}
+.acces-camps label{display:flex;flex-direction:column;gap:5px;font-size:13.5px;font-weight:500}
+.acces-camps input{font:inherit;font-size:16px;padding:10px 11px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink)}
+.acces-error{margin:0;color:var(--bad);font-size:14px}
+.acces-error:empty{display:none}
+.acces-caixa .btn{justify-content:center;padding:10px}
+.acces-peu,.surt{background:none;border:0;font:inherit;font-size:13.5px;cursor:pointer;text-decoration:underline;padding:6px}
+.acces-peu{color:var(--link)}
+.surt{color:var(--side-ink);text-align:left;padding:6px 16px 14px}
