@@ -1,0 +1,64 @@
+<!doctype html><html lang="ca"><meta charset="utf-8"><title>Proves de l'Obrador</title><pre id="o">Executant…</pre>
+<script type="module">
+// Postgres real (PGlite) dins el navegador, amb dades inventades. Servidor: python -m http.server des de l'arrel del repositori.
+import { PGlite } from 'https://cdn.jsdelivr.net/npm/@electric-sql/pglite@0.2.17/dist/index.js';
+const R = []; const ok = (n, c) => R.push((c ? 'OK    ' : 'ERROR ') + n);
+const u = (n) => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
+const f = (n) => String(n).padStart(8, '0') + '-0000-4000-8000-000000000000';
+const db = new PGlite();
+await db.exec(`create role anon nologin; create role authenticated nologin; create schema auth; create table auth.users(id uuid primary key);
+create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+grant usage on schema auth, public to anon, authenticated; grant execute on function auth.uid() to anon, authenticated;
+alter default privileges in schema public grant all on tables to anon, authenticated;
+create schema storage; grant usage on schema storage to anon, authenticated; create table storage.buckets(id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
+create table storage.objects(id uuid default gen_random_uuid(), bucket_id text, name text); alter table storage.objects enable row level security; grant all on storage.objects to anon, authenticated;
+create table workers(id uuid primary key, name text, position text, external boolean default false, company text, pin text);
+create table obres(id uuid primary key, name text, address text, active boolean default true);
+create table fitxatges(id uuid primary key, worker_id uuid, date date, baixa boolean default false, obra_id uuid, hours numeric, dieta boolean default false, desplacament boolean default false, comment text, hourly_rate numeric, dieta_rate numeric, desplacament_rate numeric);
+insert into auth.users values ('${u(1)}'),('${u(2)}'),('${u(3)}'),('${u(4)}');
+insert into workers values ('${u(11)}','Prova U','Peó',false,null,'x'),('${u(12)}','Prova Extern','Oficial 1a',true,'Empresa P','x');
+insert into obres values ('${u(21)}','10001 Obra A','Carrer A'),('${u(22)}','1 OBRA PROVA',''),('${u(23)}','10002 Obra B','');
+insert into fitxatges(id,worker_id,date,baixa,obra_id,hours,dieta,desplacament,comment,hourly_rate,dieta_rate,desplacament_rate) values
+ ('${f(1)}','${u(11)}','2026-01-02',false,'${u(21)}',8,true,false,'',20.5,12.84,9),('${f(2)}','${u(12)}','2026-01-02',false,'${u(23)}',7.5,false,true,'Pica',30,0,12),
+ ('${f(3)}','${u(11)}','2026-01-03',true,'${u(21)}',0,false,false,'malaltia',20,0,0),('${f(4)}','${u(11)}','2026-01-04',false,'${u(22)}',8,false,false,'',20,0,0);`);
+await db.exec(await (await fetch('../sql/01_obrador.sql', { cache: 'no-store' })).text());
+await db.exec(`insert into obrador_membres values ('${u(1)}','Admin','admin'),('${u(2)}','Edita','edicio'),('${u(3)}','Mira','lectura')`);
+const q = async (s, p) => (await db.query(s, p)).rows;
+const com = (rol, sub, s) => db.transaction(async (t) => { await t.query("select set_config('request.jwt.claim.sub',$1,true)", [sub || '']); await t.exec('set local role ' + rol); const r = await t.query(s); return r.rows.length || r.affectedRows || 0; }).catch((e) => e.message);
+const refusa = (x) => typeof x === 'string' || x === 0;
+const rec = async () => (await q('select obrador_privat.recull_parts() r'))[0].r;
+const part = async (i) => (await q("select dades from obrador_docs where coleccio='parts' and id=$1", ['rc-' + String(i).padStart(8, '0')]))[0]?.dades;
+// Recollida
+await q("insert into obrador_docs(coleccio,id,dades) values ('obres','manual','{\"codi\":\"10002\",\"nom\":\"B\"}')");
+let r = await rec(); ok('recull 2 parts', r.nous === 2 && r.corregits === 0);
+ok('sense baixes ni obra de prova', !(await part(3)) && !(await part(4)));
+let p = await part(1); ok('imports i obra creada', p.preuHora === 20.5 && p.dietes === 12.84 && p.desplacament === 0 && p.obraId === 'rc-10001' && p.data === '2026-01-02');
+ok('empremta de font igual que la recollida anterior', p.recopFont === '2026-01-02|10001|Prova U|Peó|8|20.5|12.84|0');
+p = await part(2); ok('extern, obra existent i feina', p.treballador === 'Prova Extern (Empresa P)' && p.obraId === 'manual' && p.feina === 'Pica');
+const e1 = (await q('select public.obrador_empremta() e'))[0].e; r = await rec(); ok('segona passada sense canvis', r.nous === 0 && r.corregits === 0 && e1 === (await q('select public.obrador_empremta() e'))[0].e);
+await q("update obrador_docs set dades=dades||'{\"feina\":\"Meva\",\"hores\":4}' where id='rc-00000001'"); await rec(); ok('conserva edició manual', (await part(1)).hores === 4);
+await q(`update fitxatges set hours=9 where id='${f(1)}'`); r = await rec(); p = await part(1); ok('correcció de RECOPAPP actualitza i conserva feina', r.corregits === 1 && p.hores === 9 && p.feina === 'Meva');
+await q("delete from obrador_docs where id='rc-00000002'"); await rec(); ok('no torna a crear un esborrat', !(await part(2)));
+await q(`update fitxatges set hours=1 where id='${f(2)}'`); await rec(); ok('esborrat i corregit: tampoc', !(await part(2)));
+ok('cap dada sensible', !JSON.stringify(await q('select dades from obrador_docs')).match(/malaltia|"pin"/));
+// Permisos
+const nou = (i) => `insert into obrador_docs(coleccio,id,dades) values ('tasques','${i}','{}')`;
+for (const [n, rol, sub] of [['anònim', 'anon', ''], ['compte sense alta', 'authenticated', u(4)]]) {
+  ok(n + ' no llegeix documents', refusa(await com(rol, sub, 'select 1 from obrador_docs'))); ok(n + ' no llegeix membres', refusa(await com(rol, sub, 'select 1 from obrador_membres')));
+  ok(n + ' no crea', refusa(await com(rol, sub, nou('x')))); ok(n + ' no canvia', refusa(await com(rol, sub, "update obrador_docs set dades='{}'"))); ok(n + ' no esborra', refusa(await com(rol, sub, 'delete from obrador_docs')));
+  ok(n + ' no puja fitxers', refusa(await com(rol, sub, "insert into storage.objects(bucket_id,name) values('obrador','x')")));
+}
+ok('anònim no pot cridar empremta', refusa(await com('anon', '', 'select public.obrador_empremta()')));
+ok('lectura llegeix', (await com('authenticated', u(3), 'select 1 from obrador_docs')) > 0);
+ok('lectura no crea', refusa(await com('authenticated', u(3), nou('y')))); ok('lectura no canvia', refusa(await com('authenticated', u(3), "update obrador_docs set dades='{}'"))); ok('lectura no esborra', refusa(await com('authenticated', u(3), 'delete from obrador_docs')));
+ok('edició crea', (await com('authenticated', u(2), nou('z'))) === 1); ok('edició canvia', (await com('authenticated', u(2), "update obrador_docs set dades='{\"a\":1}' where id='z'")) === 1);
+ok('la versió puja i no es pot falsejar', (await com('authenticated', u(2), "update obrador_docs set versio=99 where id='z'"), (await q("select versio v from obrador_docs where id='z'"))[0].v == 3));
+ok('versió antiga no desa', (await com('authenticated', u(2), "update obrador_docs set dades='{}' where id='z' and versio=1")) === 0);
+ok('edició esborra', (await com('authenticated', u(2), "delete from obrador_docs where id='z'")) === 1);
+for (const [n, s] of [['edició', u(2)], ['admin', u(1)]]) { ok(n + ' no es canvia el rol des de la web', refusa(await com('authenticated', s, "update obrador_membres set rol='admin'"))); ok(n + ' no afegeix membres des de la web', refusa(await com('authenticated', s, `insert into obrador_membres values('${u(4)}','x','admin')`))); ok(n + ' no executa la recollida', refusa(await com('authenticated', s, 'select obrador_privat.recull_parts()'))); }
+await com('authenticated', u(2), "insert into storage.objects(bucket_id,name) values('obrador','f')");
+ok('edició puja fitxer', (await q("select 1 from storage.objects where name='f'")).length === 1); ok('edició no puja a altres espais', refusa(await com('authenticated', u(2), "insert into storage.objects(bucket_id,name) values('justificants','f')")));
+ok('edició no esborra fitxer', refusa(await com('authenticated', u(2), 'delete from storage.objects'))); ok('admin esborra fitxer', (await com('authenticated', u(1), 'delete from storage.objects')) === 1);
+const mal = R.filter((x) => x.startsWith('ERROR')).length;
+document.getElementById('o').textContent = R.join('\n') + `\n\n${R.length - mal}/${R.length} OK`; window.FI = `${R.length - mal}/${R.length}`;
+</script></html>
