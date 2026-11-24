@@ -12,7 +12,7 @@ grant usage on schema auth, public to anon, authenticated; grant execute on func
 alter default privileges in schema public grant all on tables to anon, authenticated;
 create schema storage; grant usage on schema storage to anon, authenticated; create table storage.buckets(id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table storage.objects(id uuid default gen_random_uuid(), bucket_id text, name text); alter table storage.objects enable row level security; grant all on storage.objects to anon, authenticated;
-create table workers(id uuid primary key, name text, position text, external boolean default false, company text, pin text);
+create table workers(id uuid primary key, name text, position text, external boolean default false, company text, pin text, role text default 'treballador', active boolean default true, hourly_rate numeric default 20);
 create table obres(id uuid primary key, name text, address text, active boolean default true);
 create table fitxatges(id uuid primary key, worker_id uuid, date date, baixa boolean default false, obra_id uuid, hours numeric, dieta boolean default false, desplacament boolean default false, comment text, hourly_rate numeric, dieta_rate numeric, desplacament_rate numeric);
 insert into auth.users values ('${u(1)}'),('${u(2)}'),('${u(3)}'),('${u(4)}');
@@ -22,6 +22,7 @@ insert into fitxatges(id,worker_id,date,baixa,obra_id,hours,dieta,desplacament,c
  ('${f(1)}','${u(11)}','2026-01-02',false,'${u(21)}',8,true,false,'',20.5,12.84,9),('${f(2)}','${u(12)}','2026-01-02',false,'${u(23)}',7.5,false,true,'Pica',30,0,12),
  ('${f(3)}','${u(11)}','2026-01-03',true,'${u(21)}',0,false,false,'malaltia',20,0,0),('${f(4)}','${u(11)}','2026-01-04',false,'${u(22)}',8,false,false,'',20,0,0);`);
 await db.exec(await (await fetch('../sql/01_obrador.sql', { cache: 'no-store' })).text());
+await db.exec(await (await fetch('../sql/03_personal.sql', { cache: 'no-store' })).text());
 await db.exec(`insert into obrador_membres values ('${u(1)}','Admin','admin'),('${u(2)}','Edita','edicio'),('${u(3)}','Mira','lectura')`);
 const q = async (s, p) => (await db.query(s, p)).rows;
 const com = (rol, sub, s) => db.transaction(async (t) => { await t.query("select set_config('request.jwt.claim.sub',$1,true)", [sub || '']); await t.exec('set local role ' + rol); const r = await t.query(s); return r.rows.length || r.affectedRows || 0; }).catch((e) => e.message);
@@ -41,6 +42,20 @@ await q(`update fitxatges set hours=9 where id='${f(1)}'`); r = await rec(); p =
 await q("delete from obrador_docs where id='rc-00000002'"); await rec(); ok('no torna a crear un esborrat', !(await part(2)));
 await q(`update fitxatges set hours=1 where id='${f(2)}'`); await rec(); ok('esborrat i corregit: tampoc', !(await part(2)));
 ok('cap dada sensible', !JSON.stringify(await q('select dades from obrador_docs')).match(/malaltia|"pin"/));
+// Personal
+await db.exec(`insert into workers(id,name,role,active,pin) values ('${u(13)}','Prova Inactiu','treballador',false,'x'),('${u(14)}','Prova Control','control',true,'x'),('${u(15)}','Prova Encarregat','encarregat',true,'x')`);
+const per = async (i) => (await q("select dades from obrador_docs where coleccio='personal' and id=$1", ['rp-' + u(i)]))[0]?.dades;
+const rp = async () => (await q('select obrador_privat.recull_personal() r'))[0].r;
+r = await rp(); ok('3 fitxes: actius d\'obra', r.nous === 3 && !(await per(13)) && !(await per(14)) && (await per(15)).rol === 'Encarregat/ada' && (await per(12)).vinculacio === 'Subcontracta');
+ok('part enllaçat amb la seva fitxa', r.enllacats === 1 && (await part(1)).personaId === 'rp-' + u(11));
+r = await rp(); ok('segona passada sense canvis (personal)', r.nous === 0 && r.corregits === 0 && r.enllacats === 0);
+await q("update obrador_docs set dades=dades||'{\"notes\":\"N\",\"prl\":\"2027-01-01\"}' where id=$1", ['rp-' + u(11)]); await q(`update workers set hourly_rate=25, active=false where id='${u(11)}'`); r = await rp();
+ok('canvi a RECOPAPP actualitza i conserva notes', r.corregits === 1 && (await per(11)).costHora === 25 && (await per(11)).estat === 'Inactiu' && (await per(11)).notes === 'N');
+await q("delete from obrador_docs where id=$1", ['rp-' + u(15)]); await rp(); ok('fitxa esborrada no torna', !(await per(15)));
+await q("update obrador_docs set dades=dades||'{\"personaId\":\"\"}' where id='rc-00000001'"); await rp(); ok('respecta persona canviada a l\'Obrador', (await part(1)).personaId === '');
+await q(`update fitxatges set hours=5 where id='${f(1)}'`); r = (await q('select obrador_privat.recull() r'))[0].r; ok('recull complet', r.parts.corregits === 1 && (await part(1)).personaId === '');
+ok('fitxes sense PIN', !JSON.stringify(await q("select dades from obrador_docs where coleccio='personal'")).includes('pin'));
+ok('ningú executa recull des de la web', refusa(await com('authenticated', u(1), 'select obrador_privat.recull()')));
 // Permisos
 const nou = (i) => `insert into obrador_docs(coleccio,id,dades) values ('tasques','${i}','{}')`;
 for (const [n, rol, sub] of [['anònim', 'anon', ''], ['compte sense alta', 'authenticated', u(4)]]) {

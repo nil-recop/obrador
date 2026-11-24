@@ -5,6 +5,9 @@ const uid = '00000000-0000-4000-8000-000000000001', files = new Map(), real = wi
 const posa = (c, id, dades) => files.set(c + '/' + id, { coleccio: c, id, dades, versio: 1 });
 posa('obres', 'o1', { codi: '10001', nom: 'Obra de prova', estat: 'En execució' });
 posa('parts', 'rc-1', { data: '2026-01-02', obraId: 'o1', treballador: 'Persona de prova', ofici: 'Peó', hores: 8, preuHora: 20, dietes: 10, desplacament: 5, origen: 'RECOPAPP' });
+posa('parts', 'm1', { data: '2026-02-02', obraId: 'o1', treballador: 'Altra', hores: 4, preuHora: 10 });
+posa('personal', 'rp-1', { nom: 'Persona de prova', rol: 'Treballador/a', categoria: 'Capatàs', vinculacio: 'Plantilla', costHora: 20, estat: 'Actiu' });
+files.get('parts/rc-1').dades.personaId = 'rp-1';
 window.FILES = files; window.CRIDES = []; window.ROL = 'edicio';
 const js = (d, s = 200) => new Response(JSON.stringify(d), { status: s });
 const tk = () => 'x.' + btoa(JSON.stringify({ sub: uid })) + '.y';
