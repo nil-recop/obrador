@@ -29,6 +29,6 @@ window.fetch = async (u, o = {}) => {
   return js({}, 404);
 };
 let h = await (await real('../public/index.html', { cache: 'no-store' })).text();
-h = h.replace('<head>', '<head><base href="../public/">').replace('<script src="config.js"></' + 'script>', '<script>window.OBRADOR_CONFIG={url:"https://prova.test",clauPublica:"k"}</' + 'script>');
+h = h.replace('<head>', '<head><base href="../public/">').replace('<script src="config.js?v=2"></' + 'script>', '<script>window.OBRADOR_CONFIG={url:"https://prova.test",clauPublica:"k"}</' + 'script>');
 document.open(); document.write(h); document.close();
 </script></html>
