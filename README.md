@@ -1,4 +1,4 @@
-# Obrador
+# Obra-empresa
 
 Plataforma de gestió d'obra i documents. Web autònoma: no depèn de Claude.
 
