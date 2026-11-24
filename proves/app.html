@@ -8,6 +8,12 @@ posa('parts', 'rc-1', { data: '2026-01-02', obraId: 'o1', treballador: 'Persona 
 posa('parts', 'm1', { data: '2026-02-02', obraId: 'o1', treballador: 'Altra', hores: 4, preuHora: 10 });
 posa('personal', 'rp-1', { nom: 'Persona de prova', rol: 'Treballador/a', categoria: 'Capatàs', vinculacio: 'Plantilla', costHora: 20, estat: 'Actiu' });
 files.get('parts/rc-1').dades.personaId = 'rp-1';
+posa('obres', 'o2', { codi: '10002', nom: 'Obra amb baixa', estat: 'En execució', licitacio: 100000, baixa: 10, pressupost: 90000 });
+posa('factures', 'f2', { num: 'F', sentit: 'Emesa', obraId: 'o2', base: 50000, estat: 'Cobrada' });
+posa('comandes', 'c2', { num: 'C', obraId: 'o2', import: 30000, estat: 'Aprovada' });
+posa('modificats', 'md', { obraId: 'o2', import: 10000, estat: 'Aprovat' });
+posa('modificats', 'mp', { obraId: 'o2', import: 7000, estat: 'Proposat' });
+posa('partides', 'pa', { obraId: 'o2', codi: '1', descripcio: 'x', amidament: 100, preuVenda: 1000, costUnit: 700 });
 window.FILES = files; window.CRIDES = []; window.ROL = 'edicio';
 const js = (d, s = 200) => new Response(JSON.stringify(d), { status: s });
 const tk = () => 'x.' + btoa(JSON.stringify({ sub: uid })) + '.y';
