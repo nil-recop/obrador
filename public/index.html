@@ -259,8 +259,8 @@ const M={
   {k:'concepte',l:'Concepte',tp:'text',w:1},{k:'import',l:'Import (sense IVA)',tp:'money'},
   {k:'estat',l:'Estat',tp:'sel',o:['Esborrany','Sol·licitada','Aprovada','Rebuda','Cancel·lada']},{k:'data',l:'Data',tp:'date'}],
   cols:['num','obraId','proveidor','tipus','concepte','import','estat']},
- factures:{t:'Facturació',s:'factura',pref:'FV',tit:'concepte',camps:[
-  {k:'num',l:'Núm. factura',tp:'code',req:1},{k:'sentit',l:'Tipus',tp:'sel',o:['Emesa','Rebuda']},
+ factures:{t:'Proformes',s:'factura',pref:'FR',tit:'concepte',camps:[
+  {k:'num',l:'Núm. factura',tp:'code',req:1},{k:'sentit',l:'Tipus',tp:'sel',o:['Rebuda']},
   {k:'obraId',l:'Obra',tp:'obra'},{k:'tercer',l:'Client / proveïdor',tp:'text'},
   {k:'concepte',l:'Concepte',tp:'text',w:1,ph:'Certificació núm. 3 — octubre'},
   {k:'base',l:'Base imposable',tp:'money'},{k:'iva',l:'IVA',tp:'sel',o:['21%','10%','ISP (inversió del subjecte passiu)']},
@@ -285,7 +285,7 @@ const NAV=[
  {g:null,items:[['tauler','Tauler','M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z']]},
  {g:'Obra',items:[['obres','Obres','M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6'],['tasques','Planificació','M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'],['parts','Parts de treball','M12 8v4l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z']]},
  {g:'Documents',items:[['documents','Documents','M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z']]},
- {g:'Gestió',items:[['oportunitats','Licitacions','M9 12l2 2 4-4M5 4h14v16H5z'],['comandes','Compres','M6 6h15l-2 9H7L5 3H2M9 20h.01M18 20h.01'],['factures','Facturació','M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4'],['actius','Maquinària','M3 17h4l3-6h5l2 3h4v3H3zM7 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0M10 11V6h4']]}
+ {g:'Gestió',items:[['oportunitats','Licitacions','M9 12l2 2 4-4M5 4h14v16H5z'],['comandes','Compres','M6 6h15l-2 9H7L5 3H2M9 20h.01M18 20h.01'],['factures','Proformes','M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4'],['actius','Maquinària','M3 17h4l3-6h5l2 3h4v3H3zM7 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0M10 11V6h4']]}
 ];
 
 /* ---------- State ---------- */
@@ -300,9 +300,9 @@ const mv=k=>V.mods[k]||(V.mods[k]={q:'',estat:'',obra:'',mode:M[k]&&M[k].kanban?
 const $=s=>document.querySelector(s);
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sum=(a,f)=>a.reduce((s,x)=>s+(f(x)||0),0);
-const MF=new Intl.NumberFormat('ca-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0});
-const MF2=new Intl.NumberFormat('ca-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtM=n=>MF.format(+n||0);
+const fmtN=(n,d=2)=>(+n||0).toLocaleString('ca-ES',{minimumFractionDigits:d,maximumFractionDigits:d,useGrouping:'always'});
+const MF2=new Intl.NumberFormat('ca-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:'always'});
+const fmtM=n=>MF2.format(+n||0);
 const fmtD=d=>{if(!d)return'—';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:esc(d)};
 const fmtDT=t=>{if(!t)return'—';const d=new Date(t);return isNaN(d)?'—':d.toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'})};
 const fmtSize=b=>!b?'—':b<1024?b+' B':b<1048576?(b/1024).toFixed(0)+' kB':(b/1048576).toFixed(1)+' MB';
@@ -318,13 +318,13 @@ function totF(f){const b=+f.base||0;const r=String(f.iva||'').startsWith('ISP')?
 const costPart=p=>(+p.hores||0)*(+p.preuHora||0)+(+p.dietes||0)+(+p.desplacament||0);
 function fin(oid){
   const o=obra(oid)||{};
-  const fe=S.factures.filter(f=>f.obraId===oid&&f.sentit==='Emesa'&&f.estat!=='Esborrany');
-  const certificat=sum(fe,f=>+f.base);
-  const cobrat=sum(fe.filter(f=>f.estat==='Cobrada'),f=>+f.base);
+  const ce=S.certificacions.filter(c=>c.obraId===oid),org=es=>ce.filter(c=>es.includes(c.estat)).reduce((m,c)=>Math.max(m,+c.origen||0),0);
+  const certificat=org(['Presentada','Conformada','Facturada','Cobrada']),facturat=org(['Facturada','Cobrada']);
+  const cobrat=sum(ce.filter(c=>c.estat==='Cobrada'),c=>certPer(c));
   const compres=sum(S.comandes.filter(c=>c.obraId===oid&&!['Esborrany','Cancel·lada'].includes(c.estat)),c=>+c.import);
   const ma=sum(S.parts.filter(p=>p.obraId===oid),costPart);
   const cost=compres+ma,pec=+o.pressupost||0;
-  return{pec,certificat,cobrat,compres,ma,cost,marge:certificat?(certificat-cost)/certificat:null};
+  return{pec,certificat,facturat,cobrat,compres,ma,cost,marge:certificat?(certificat-cost)/certificat:null};
 }
 function nextCode(mk){const p=M[mk].pref,y=new Date().getFullYear();const k=M[mk].camps[0].k;let n=0;S[mk].forEach(r=>{const m=String(r[k]||'').match(/(\d+)$/);if(m&&String(r[k]).includes(String(y)))n=Math.max(n,+m[1])});return `${p}-${y}-${String(n+1).padStart(3,'0')}`}
 const fext=n=>(String(n).split('.').pop()||'').toLowerCase();
@@ -417,8 +417,7 @@ function dashHtml(){
   const actives=S.obres.filter(o=>['En execució','Preparació','Aturada','Recepció provisional'].includes(o.estat));
   const exec=S.obres.filter(o=>o.estat==='En execució');
   const cartera=sum(actives,o=>econ(o.id).vigent*(1-(+o.avanc||0)/100));
-  const pend=S.factures.filter(f=>f.sentit==='Emesa'&&['Pendent','Vençuda'].includes(f.estat));
-  const vencEm=pend.filter(isVencuda);
+  const pend=S.certificacions.filter(c=>c.estat==='Facturada');
   const opp=S.oportunitats.filter(o=>['Detectada','En estudi','Ofertada'].includes(o.estat));
   const pond=sum(opp,o=>(+o.import||0)*(+o.probabilitat||0)/100);
   const hasEx=COLS.some(c=>S[c].some(x=>x.exemple));
@@ -429,7 +428,7 @@ function dashHtml(){
   S.comandes.filter(c=>c.estat==='Sol·licitada').forEach(c=>att.push({tone:'info',tx:`Comanda per aprovar · ${c.num}`,sub:`${c.proveidor||''} · ${fmtM(c.import)}`,mk:'comandes',id:c.id}));
   S.actius.filter(a=>a.revisio&&a.revisio<=addDays(30)&&a.estat!=='Baixa').forEach(a=>att.push({tone:a.revisio<t?'bad':'warn',tx:`Revisió de ${a.nom}`,sub:`${a.codi||''} · ${fmtD(a.revisio)}`,mk:'actius',id:a.id}));
 
-  const exp30=addDays(30);S.tercers.filter(x=>x.estat!=='No apte').forEach(x=>[['rc','Assegurança RC'],['ss','Certificat Seguretat Social'],['hisenda','Certificat Hisenda']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençut':'Venç'} el ${fmtD(x[kk])}`,mk:'tercers',id:x.id})}));S.personal.filter(x=>x.estat!=='Inactiu').forEach(x=>[['prl','Formació PRL'],['aptitud','Aptitud laboral'],['habilitacio','Habilitació']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençuda':'Venç'} el ${fmtD(x[kk])}`,mk:'personal',id:x.id})}));S.qualitat.filter(x=>x.estat!=='Tancada'&&(x.gravetat==='Greu'||(x.termini&&x.termini<t))).forEach(x=>att.push({tone:x.gravetat==='Greu'?'bad':'warn',tx:`${x.tipus}: ${x.descripcio}`,sub:`${obraTxt(x.obraId)}${x.termini?' · termini '+fmtD(x.termini):''}`,mk:'qualitat',id:x.id}));S.modificats.filter(x=>x.estat==='Presentat al client').forEach(x=>att.push({tone:'info',tx:`Modificat pendent de resposta · ${x.num||''}`,sub:`${obraTxt(x.obraId)} · ${fmtM(x.import)}`,mk:'modificats',id:x.id}));S.certificacions.filter(x=>x.estat==='Conformada').forEach(x=>att.push({tone:'warn',tx:`Certificació ${x.num} conformada: pendent de facturar`,sub:`${obraTxt(x.obraId)} · ${fmtM(certPer(x))} del període`,mk:'certificacions',id:x.id}));const recent=S.fitxers.filter(f=>!f.paperera).sort((a,b)=>String(b.actualitzat).localeCompare(String(a.actualitzat))).slice(0,6);
+  const exp30=addDays(30);S.tercers.filter(x=>x.estat!=='No apte').forEach(x=>[['rc','Assegurança RC'],['ss','Certificat Seguretat Social'],['hisenda','Certificat Hisenda']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençut':'Venç'} el ${fmtD(x[kk])}`,mk:'tercers',id:x.id})}));S.personal.filter(x=>x.estat!=='Inactiu').forEach(x=>[['prl','Formació PRL'],['aptitud','Aptitud laboral'],['habilitacio','Habilitació']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençuda':'Venç'} el ${fmtD(x[kk])}`,mk:'personal',id:x.id})}));S.qualitat.filter(x=>x.estat!=='Tancada'&&(x.gravetat==='Greu'||(x.termini&&x.termini<t))).forEach(x=>att.push({tone:x.gravetat==='Greu'?'bad':'warn',tx:`${x.tipus}: ${x.descripcio}`,sub:`${obraTxt(x.obraId)}${x.termini?' · termini '+fmtD(x.termini):''}`,mk:'qualitat',id:x.id}));S.modificats.filter(x=>x.estat==='Presentat al client').forEach(x=>att.push({tone:'info',tx:`Contradictòria pendent de resposta · ${x.num||''}`,sub:`${obraTxt(x.obraId)} · ${fmtM(x.import)}`,mk:'modificats',id:x.id}));S.certificacions.filter(x=>x.estat==='Conformada').forEach(x=>att.push({tone:'warn',tx:`Certificació ${x.num} conformada: pendent de facturar`,sub:`${obraTxt(x.obraId)} · ${fmtM(certPer(x))} del període`,mk:'certificacions',id:x.id}));const recent=S.fitxers.filter(f=>!f.paperera).sort((a,b)=>String(b.actualitzat).localeCompare(String(a.actualitzat))).slice(0,6);
   const dt=new Date().toLocaleDateString('ca-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   return `
   ${hasEx&&CANWRITE?`<div class="banner"><p>Ara hi ha <b>dades d'exemple</b> (marcades com a exemple) perquè vegis com funciona l'Obrador. Quan comencis a entrar dades reals, pots esborrar-les.</p><button class="btn danger sm" data-act="wipeEx" id="wipeEx">Esborra les dades d'exemple</button></div>`:''}
@@ -437,7 +436,7 @@ function dashHtml(){
   <div class="kpis">
     <div class="kpi"><div class="l">Obres en execució</div><div class="v">${exec.length}</div><div class="s">${actives.length} obres actives en total</div></div>
     <div class="kpi"><div class="l">Cartera pendent d'executar</div><div class="v">${fmtM(cartera)}</div><div class="s">Contracte × (100% − avanç)</div></div>
-    <div class="kpi"><div class="l">Pendent de cobrament</div><div class="v">${fmtM(sum(pend,f=>totF(f).total))}</div><div class="s">${vencEm.length?`<span style="color:var(--bad)">${fmtM(sum(vencEm,f=>totF(f).total))} vençut</span>`:'Res vençut'}</div></div>
+    <div class="kpi"><div class="l">Pendent de cobrament</div><div class="v">${fmtM(sum(pend,c=>certPer(c)))}</div><div class="s">Certificacions facturades i no cobrades, sense IVA</div></div>
     <div class="kpi"><div class="l">Licitacions en curs</div><div class="v">${fmtM(pond)}</div><div class="s">Ponderat per probabilitat · ${opp.length} obertes</div></div>
   </div>
   <div class="grid2">
@@ -467,7 +466,7 @@ function dashHtml(){
 }
 const obraTxt=id=>{const o=obra(id);return o?`${o.codi} ${o.nom}`:'Sense obra'};
 const ownerTxt=ow=>ow==='empresa'?'Empresa':obraTxt(ow);
-const progHtml=p=>`<div class="prog"><div class="bar" style="flex:1"><i style="width:${Math.max(0,Math.min(100,p))}%"></i></div><span class="mono">${Math.round(p)}%</span></div>`;
+const progHtml=p=>`<div class="prog"><div class="bar" style="flex:1"><i style="width:${Math.max(0,Math.min(100,p))}%"></i></div><span class="mono">${Number.isInteger(+p)?p:fmtN(p)}%</span></div>`;
 function emptyHtml(t,s,mk,def){return `<div class="empty"><b>${esc(t)}</b>${esc(s)}${mk&&CANWRITE?`<div><button class="btn pri" data-act="new" data-mk="${mk}" ${def?`data-def='${esc(JSON.stringify(def))}'`:''}>+ Nova ${M[mk].s}</button></div>`:''}</div>`}
 
 /* ---------- Generic list ---------- */
@@ -482,8 +481,8 @@ function cellVal(mk,c,r){
   if(!f)return{h:esc(v)};
   if(f.tp==='obra')return{h:v?obraLbl(v):(f.none?`<span class="muted">${f.none}</span>`:'<span class="muted">—</span>')};
   if(f.tp==='money')return{h:fmtM(v),num:1};
-  if(f.tp==='pct')return c==='avanc'?{h:progHtml(+v||0)}:{h:(v==null||v==='')?'—':(+v)+'%',num:1};
-  if(f.tp==='num')return{h:v==null||v===''?'—':esc(v),num:1};
+  if(f.tp==='pct')return c==='avanc'?{h:progHtml(+v||0)}:{h:(v==null||v==='')?'—':fmtN(v)+'%',num:1};
+  if(f.tp==='num')return{h:v==null||v===''?'—':['hores','quantitat'].includes(c)?fmtN(v):esc((+v).toLocaleString('ca-ES',{maximumFractionDigits:3,useGrouping:'always'})),num:1};
   if(f.tp==='date')return{h:fmtD(v)};
   if(f.tp==='code')return{h:`<span class="code">${esc(v)}</span>`};
   if(c==='estat'||c==='prioritat')return{h:pill(v)};
@@ -510,8 +509,8 @@ function listHtml(mk,fixedObra){
    ${fixedObra&&CANWRITE?`<button class="btn pri sm" data-act="new" data-mk="${mk}" data-def='${esc(JSON.stringify(def))}'>+ Nova ${m.s}</button>`:''}
   </div>`;
   let summary='';
-  if(mk==='factures'){const em=rows.filter(f=>f.sentit==='Emesa'),re=rows.filter(f=>f.sentit==='Rebuda');summary=`<div class="tools muted" style="font-size:13px">Emeses: <b class="mono" style="color:var(--ink)">${fmtM(sum(em,f=>totF(f).total))}</b> · Rebudes: <b class="mono" style="color:var(--ink)">${fmtM(sum(re,f=>totF(f).total))}</b> · ${rows.length} factures</div>`}
-  if(mk==='parts'){summary=`<div class="tools muted" style="font-size:13px">${sum(rows,p=>+p.hores)} h · cost <b class="mono" style="color:var(--ink)">${fmtM(sum(rows,costPart))}</b> · directe ${fmtM(sum(rows,dirPart))} · indirecte ${fmtM(sum(rows,costPart)-sum(rows,dirPart))}</div>`}
+  if(mk==='factures'){const em=rows.filter(f=>f.sentit==='Emesa'),re=rows.filter(f=>f.sentit==='Rebuda');summary=`<div class="tools muted" style="font-size:13px">${em.length?`Emeses: <b class="mono">${fmtM(sum(em,f=>totF(f).total))}</b> · `:''}Rebudes: <b class="mono" style="color:var(--ink)">${fmtM(sum(re,f=>totF(f).total))}</b> · ${rows.length} factures</div>`}
+  if(mk==='parts'){summary=`<div class="tools muted" style="font-size:13px">${fmtN(sum(rows,p=>+p.hores))} h · cost <b class="mono" style="color:var(--ink)">${fmtM(sum(rows,costPart))}</b> · directe ${fmtM(sum(rows,dirPart))} · indirecte ${fmtM(sum(rows,costPart)-sum(rows,dirPart))}</div>`}
   if(mk==='comandes'){summary=`<div class="tools muted" style="font-size:13px">Compromès (aprovat o rebut): <b class="mono" style="color:var(--ink)">${fmtM(sum(rows.filter(c=>['Aprovada','Rebuda'].includes(c.estat)),c=>+c.import))}</b></div>`}
   if(!S[mk].filter(r=>!fixedObra||r.obraId===fixedObra).length)return tools.replace(/<input[^>]*>/,'').replace(/<select[\s\S]*?<\/select>/g,'')+emptyHtml(`Encara no hi ha cap ${m.s}`,fixedObra?'Aquesta obra encara no en té cap.':'Crea el primer registre per començar.',mk,def);
   if(kan){
@@ -532,7 +531,7 @@ const obraOpts=(sel,none)=>(none?`<option value="">${esc(none)}</option>`:'')+S.
 /* ---------- Obra detail ---------- */
 function obraHtml(id){
   const o=obra(id);if(!o)return `<div class="empty"><b>No s'ha trobat aquesta obra</b>Potser s'ha eliminat. <div><a class="btn" href="#obres">Torna a Obres</a></div></div>`;
-  const f=fin(id),ec=econ(id);const tabs=[['resum','Resum'],['control','Control'],['partides','Partides'],['certificacions','Certificacions'],['modificats','Modificats'],['tasques','Planificació'],['ofertes','Comparatius'],['comandes','Compres'],['factures','Facturació'],['parts','Parts'],['indirectes','Indirectes'],['qualitat','Qualitat i PRL'],['docs','Documents']];
+  const f=fin(id),ec=econ(id);const tabs=[['resum','Resum'],['control','Control'],['partides','Partides'],['modificats','Contradictòries'],['produccio','Producció'],['certificacions','Certificacions'],['tasques','Planificació'],['ofertes','Comparatius'],['comandes','Compres'],['factures','Proformes'],['parts','Parts'],['indirectes','Indirectes'],['qualitat','Qualitat i PRL'],['docs','Documents']];
   const tb=V.obraTab;
   let body='';
   if(tb==='resum'){
@@ -542,7 +541,7 @@ function obraHtml(id){
     body=econPanel(id)+`<div class="grid2"><section class="panel"><h2>Avanç per fases</h2><div class="pb">${byF.length?`<table><tbody>${byF.map(x=>`<tr style="cursor:default"><td style="width:40%">${esc(x.fs)} ${x.b?pill('Bloquejada'):''}</td><td>${progHtml(x.d/x.n*100)}</td><td class="num code">${x.d}/${x.n}</td></tr>`).join('')}</tbody></table>`:`<div class="muted">Encara no hi ha tasques planificades.</div>`}</div></section>
     <section class="panel"><h2>Fitxa</h2><div class="pb"><dl class="meta">
       <dt>Client</dt><dd>${esc(o.client||'—')}</dd><dt>Ubicació</dt><dd>${esc(o.ubicacio||'—')}</dd><dt>Tipologia</dt><dd>${esc(o.tipus||'—')}</dd>
-      <dt>Cap d'obra</dt><dd>${esc(o.cap||'—')}</dd><dt>Superfície</dt><dd class="mono">${o.superficie?esc(o.superficie)+' m²':'—'}</dd>
+      <dt>Cap d'obra</dt><dd>${esc(o.cap||'—')}</dd><dt>Superfície</dt><dd class="mono">${o.superficie?fmtN(o.superficie)+' m²':'—'}</dd>
       <dt>Termini</dt><dd>${fmtD(o.inici)} → ${fmtD(o.fi)}</dd><dt>Ràtio</dt><dd class="mono">${o.superficie&&ec.vigent?fmtM(ec.vigent/o.superficie)+'/m²':'—'}</dd>
       <dt>Documents</dt><dd>${nd} fitxers</dd><dt>Cost directe</dt><dd class="mono">${fmtM(f.directe)}</dd><dt>Cost indirecte</dt><dd class="mono">${fmtM(f.indirecte)}</dd>
     </dl></div></section></div>`;
@@ -552,8 +551,8 @@ function obraHtml(id){
   <div class="head"><div><h1>${esc(o.nom)}</h1><div class="muted" style="margin-top:4px">${esc(o.client||'')}${o.ubicacio?' · '+esc(o.ubicacio):''}</div></div>${pill(o.estat)}<span class="sp"></span>
   ${CANWRITE?`<button class="btn" data-act="edit" data-mk="obres" data-id="${esc(id)}">Edita l'obra</button>`:''}</div>
   <div class="kpis">
-    <div class="kpi"><div class="l">Contracte</div><div class="v">${fmtM(ec.vigent)}</div><div class="s">${ec.lic?'Baixa '+pn(o.baixa)+' · ':''}${ec.modAp?'modificats '+fmtM(ec.modAp)+' · ':''}avanç ${+o.avanc||0}%</div></div>
-    <div class="kpi"><div class="l">Certificat</div><div class="v">${fmtM(f.certificat)}</div><div class="s">${ec.vigent?((f.certificat/ec.vigent)*100).toFixed(1)+'% del contracte':'—'} · cobrat ${fmtM(f.cobrat)}</div></div>
+    <div class="kpi"><div class="l">Contracte</div><div class="v">${fmtM(ec.vigent)}</div><div class="s">${ec.lic?'Baixa '+pn(o.baixa)+' · ':''}${ec.modAp?'contradictòries '+fmtM(ec.modAp)+' · ':''}avanç ${+o.avanc||0}%</div></div>
+    <div class="kpi"><div class="l">Certificat</div><div class="v">${fmtM(f.certificat)}</div><div class="s">${ec.vigent?fmtN(f.certificat/ec.vigent*100)+'% del contracte':'—'} · facturat ${fmtM(f.facturat)} · cobrat ${fmtM(f.cobrat)}</div></div>
     <div class="kpi"><div class="l">Cost real</div><div class="v">${fmtM(f.cost)}</div><div class="s">Directe ${fmtM(f.directe)} · indirecte ${fmtM(f.indirecte)}</div></div>
     <div class="kpi"><div class="l">Marge net sobre certificat</div><div class="v" style="color:${ec.netPct==null?'inherit':ec.netPct<0?'var(--bad)':'var(--ok)'}">${p1(ec.netPct)}</div><div class="s">${fmtM(ec.net)} · brut ${p1(ec.brutPct)} · estructura ${pn(ec.pct)}</div></div>
   </div>
@@ -778,6 +777,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=6"></script><script src="obrador-personal.js?v=3"></script><script src="obrador-economia.js?v=4"></script><script src="obrador-costos.js?v=7"></script><script src="obrador-partides.js?v=2"></script><script src="obrador-docs.js?v=1"></script><script src="obrador-indirectes.js?v=1"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=7"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=8"></script><script src="obrador-partides.js?v=3"></script><script src="obrador-docs.js?v=2"></script><script src="obrador-indirectes.js?v=2"></script><script src="obrador-obra.js?v=1"></script>
 </body>
 </html>

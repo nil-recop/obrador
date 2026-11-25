@@ -10,8 +10,8 @@ const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 const estrGeneral = () => { const c = S.config.find((x) => x.id === 'empresa'); return c && !buit(c.estructura) ? +c.estructura : ESTR_DEFECTE; };
 const estrPct = (o) => (o && !buit(o.estructura) ? +o.estructura : estrGeneral());
 const contracteDe = (o) => (+o.licitacio > 0 ? r2(+o.licitacio * (1 - (+o.baixa || 0) / 100)) : +o.pressupost || 0);
-const p1 = (v) => (v == null ? '—' : (v * 100).toLocaleString('ca-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%');
-const pn = (v) => (+v || 0).toLocaleString('ca-ES', { maximumFractionDigits: 4 }) + '%';
+const p1 = (v) => (v == null ? '—' : (v * 100).toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%');
+const pn = (v) => (+v || 0).toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + '%';
 function econ(id) {
   const o = obra(id) || {}, f = fin(id), pct = estrPct(o);
   const contracte = contracteDe(o), lic = +o.licitacio || 0;
@@ -89,7 +89,7 @@ function econPanel(id) {
   <table><thead><tr><th>Contracte</th><th class="num">Import</th></tr></thead><tbody>
    ${e.lic ? fila('Import de licitació', MF2.format(e.lic)) + fila(`Baixa ${pn(e.o.baixa)}`, '−' + MF2.format(e.baixaI)) : fila('Baixa', '—', 'Entra l\'import de licitació i la baixa a «Edita l\'obra».')}
    ${fila('Contracte (PEC)', MF2.format(e.contracte), '', true)}
-   ${fila('Modificats aprovats', MF2.format(e.modAp))}
+   ${fila('Contradictòries aprovades', MF2.format(e.modAp))}
    ${fila('Contracte vigent', MF2.format(e.vigent), '', true)}
    ${fila(`Cost d'estructura previst ${pn(e.pct)}`, '−' + MF2.format(e.estPrev), e.propi ? 'Percentatge propi d\'aquesta obra' : 'Percentatge general de l\'empresa')}
    ${fila('Cost d\'obra màxim per no perdre', MF2.format(e.costMax), 'Contracte vigent − estructura', true)}

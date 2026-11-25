@@ -179,7 +179,7 @@ function lotCard(x) {
   ${inp('base', 'Base imposable *', 'number', 'step="0.01"')}${inp('data', 'Data de la compra *', 'date')}
   ${inp('num', 'Núm. del document', 'text')}${sel('tipus', 'Tipus', op(M.comandes.camps.find((f) => f.k === 'tipus').o, x.d.tipus))}
   ${x.d.classe === 'Factura' ? sel('iva', 'IVA', op(M.factures.camps.find((f) => f.k === 'iva').o, x.d.iva)) + sel('comandaId', 'Comanda', '<option value="">— Sense comanda —</option>' + cs.map((c) => `<option value="${esc(c.id)}" ${c.id === x.d.comandaId ? 'selected' : ''}>${esc([c.num, c.proveidor, fmtM(c.import)].join(' · '))}</option>`).join('')) : ''}
-  </div><div class="small">Es desarà com a ${x.d.classe === 'Factura' ? 'factura rebuda (Facturació)' : x.d.classe === 'Pressupost' ? 'compra en esborrany, que no compta com a cost (Compres)' : 'compra rebuda (Compres)'}.</div>`;
+  </div><div class="small">Es desarà com a ${x.d.classe === 'Factura' ? 'factura rebuda (Proformes)' : x.d.classe === 'Pressupost' ? 'compra en esborrany, que no compta com a cost (Compres)' : 'compra rebuda (Compres)'}.</div>`;
 }
 function lotPinta(x) {
   if (!$('#lot-l')) return;
@@ -228,7 +228,7 @@ async function lotDesa() {
     try {
       x.fitxerId = x.fitxerId || await pujaFitxer(x.f, d.obraId);
       if (d.classe === 'Factura') {
-        await save('factures', newId('fa'), { num: d.num || nextCode('factures').replace('FV', 'FR'), sentit: 'Rebuda', obraId: d.obraId || '', tercer: d.nom, nif: d.nif || '', concepte: '', comandaId: d.comandaId || '', tipusDespesa: d.tipus, tipusCost: 'Automàtic', base, iva: d.iva, retencio: 0, estat: 'Pendent', data: d.data, venciment: '', fitxerId: x.fitxerId });
+        await save('factures', newId('fa'), { num: d.num || nextCode('factures'), sentit: 'Rebuda', obraId: d.obraId || '', tercer: d.nom, nif: d.nif || '', concepte: '', comandaId: d.comandaId || '', tipusDespesa: d.tipus, tipusCost: 'Automàtic', base, iva: d.iva, retencio: 0, estat: 'Pendent', data: d.data, venciment: '', fitxerId: x.fitxerId });
         x.desat = 'factura rebuda';
       } else {
         await save('comandes', newId('co'), { num: nextCode('comandes'), obraId: d.obraId || '', proveidor: d.nom, nif: d.nif || '', docNum: d.num || '', tipus: d.tipus, tipusCost: 'Automàtic', concepte: d.classe === 'Altres' ? '' : d.classe + (d.num ? ' ' + d.num : ''), import: base, estat: d.classe === 'Pressupost' ? 'Esborrany' : 'Rebuda', data: d.data, fitxerId: x.fitxerId });
@@ -265,7 +265,7 @@ const _listD = listHtml;
 listHtml = function (mk, fo) {
   const h = _listD(mk, fo);
   if (mk !== 'comandes' && mk !== 'factures') return h;
-  const ex = mk === 'comandes' ? 'Compres: el que encarregues als proveïdors i subcontractistes (comandes i albarans).' : 'Facturació: les factures emeses al client i les rebudes dels proveïdors.';
+  const ex = mk === 'comandes' ? 'Compres: el que encarregues als proveïdors i subcontractistes (comandes i albarans).' : 'Proformes: de moment, les factures rebudes dels proveïdors. Les del client són les certificacions.';
   return `<div class="small" style="margin-bottom:8px">${ex}</div>` + (CANWRITE && ASSETS ? h.replace('<span style="flex:1"></span>', `<span style="flex:1"></span><button class="btn sm" data-act="lot" data-o="${esc(fo || '')}">Puja documents de compra</button>`) : h);
 };
 

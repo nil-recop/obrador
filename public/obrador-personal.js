@@ -4,7 +4,7 @@
   const nomMes = (m) => mesos[+m.slice(5) - 1] + ' ' + m.slice(0, 4);
   const F = { persona: '', mes: '' };
   const partsDe = (id) => S.parts.filter((p) => p.personaId === id);
-  const nHores = (a) => (Math.round(sum(a, (p) => +p.hores) * 100) / 100).toLocaleString('ca-ES');
+  const nHores = (a) => (Math.round(sum(a, (p) => +p.hores) * 100) / 100).toLocaleString('ca-ES', { minimumFractionDigits: 2, useGrouping: 'always' });
   const persOrd = () => S.personal.slice().sort((a, b) => String(a.nom).localeCompare(String(b.nom), 'ca'));
   const persOpts = (sel, buit) => `<option value="">${esc(buit)}</option>` + persOrd().map((p) => `<option value="${esc(p.id)}" ${p.id === sel ? 'selected' : ''}>${esc(p.nom)}${p.estat === 'Inactiu' ? ' (inactiu)' : ''}</option>`).join('');
 
@@ -67,6 +67,6 @@
     const ps = partsDe(id).sort((x, y) => String(y.data).localeCompare(String(x.data))), gr = {};
     ps.forEach((p) => { const m = String(p.data || '').slice(0, 7); (gr[m] = gr[m] || []).push(p); });
     b.insertAdjacentHTML('beforeend', `<div><b>Parts de treball</b><div class="muted" style="font-size:12.5px;margin:2px 0 8px">Aquesta fitxa no dona accés a l'Obrador.</div>${ps.length ? Object.keys(gr).sort().reverse().map((m) => `<details ${m === Object.keys(gr).sort().pop() ? 'open' : ''} style="margin-bottom:8px"><summary style="cursor:pointer"><b>${m.length === 7 ? nomMes(m) : 'Sense data'}</b> · ${nHores(gr[m])} h · ${fmtM(sum(gr[m], costPart))}</summary>
-      <div class="tw" style="margin-top:6px"><table><thead><tr><th>Data</th><th>Obra</th><th class="num">Hores</th><th class="num">Cost</th></tr></thead><tbody>${gr[m].map((p) => `<tr data-act="edit" data-mk="parts" data-id="${esc(p.id)}"><td>${fmtD(p.data)}</td><td>${obraLbl(p.obraId)}</td><td class="num">${esc(p.hores)}</td><td class="num">${fmtM(costPart(p))}</td></tr>`).join('')}</tbody></table></div></details>`).join('') : '<div class="muted">Encara no té cap part.</div>'}</div>`);
+      <div class="tw" style="margin-top:6px"><table><thead><tr><th>Data</th><th>Obra</th><th class="num">Hores</th><th class="num">Cost</th></tr></thead><tbody>${gr[m].map((p) => `<tr data-act="edit" data-mk="parts" data-id="${esc(p.id)}"><td>${fmtD(p.data)}</td><td>${obraLbl(p.obraId)}</td><td class="num">${fmtN(p.hores)}</td><td class="num">${fmtM(costPart(p))}</td></tr>`).join('')}</tbody></table></div></details>`).join('') : '<div class="muted">Encara no té cap part.</div>'}</div>`);
   };
 })();

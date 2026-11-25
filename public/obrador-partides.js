@@ -2,7 +2,7 @@
 const SENSE_CAP = 'Sense capítol';
 function capsObra(id) {
   const l = ((obra(id) || {}).capitols || []).slice();
-  S.partides.filter((p) => p.obraId === id).forEach((p) => { if (p.capitol && !l.includes(p.capitol)) l.push(p.capitol); });
+  [...S.partides, ...S.modificats].filter((p) => p.obraId === id).forEach((p) => { if (p.capitol && !l.includes(p.capitol)) l.push(p.capitol); });
   return l;
 }
 async function desaCaps(id, l) { const { id: _, ...o } = obra(id); await save('obres', id, { ...o, capitols: l }); }
@@ -17,18 +17,18 @@ async function desaCaps(id, l) { const { id: _, ...o } = obra(id); await save('o
 })();
 
 /* Amidaments: punt als milers i coma als decimals */
-const fmtAm = (v) => (v == null || v === '' || !isFinite(+v) ? '—' : (+v).toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3, useGrouping: 'always' }));
+const fmtAm = (v) => (v == null || v === '' || !isFinite(+v) ? '—' : (+v).toLocaleString('ca-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3, useGrouping: 'always' }));
 const etqAm = (oid) => 'Amidament contractat · PEC' + (+(obra(oid) || {}).baixa > 0 ? ' + baixa' : '');
 const _cellP = cellVal;
-cellVal = function (mk, c, r) { return mk === 'partides' && c === 'amidament' ? { h: fmtAm(r.amidament), num: 1 } : _cellP(mk, c, r); };
+cellVal = function (mk, c, r) { return ['partides', 'modificats'].includes(mk) && c === 'amidament' ? { h: fmtAm(r.amidament), num: 1 } : _cellP(mk, c, r); };
 
 /* Formulari: suggereix els capítols de l'obra triada */
 function capLlista() {
   const fm = $('#frm');
-  if (!fm || fm.dataset.mk !== 'partides') return;
+  if (!fm || !['partides', 'modificats'].includes(fm.dataset.mk)) return;
   let d = $('#caps-obra');
   if (!d) { d = document.createElement('datalist'); d.id = 'caps-obra'; fm.after(d); fm.elements.capitol.setAttribute('list', 'caps-obra'); fm.elements.capitol.autocomplete = 'off'; }
-  const et = document.querySelector('label[for="fld-amidament"]'); if (et && fm.elements.obraId.value) et.textContent = etqAm(fm.elements.obraId.value);
+  const et = document.querySelector('label[for="fld-amidament"]'); if (et && fm.dataset.mk === 'partides' && fm.elements.obraId.value) et.textContent = etqAm(fm.elements.obraId.value);
   d.innerHTML = capsObra(fm.elements.obraId.value).map((c) => `<option value="${esc(c)}">`).join('');
 }
 const _openP = openForm;
@@ -39,26 +39,27 @@ document.addEventListener('change', (e) => { if (e.target.id === 'fld-obraId') c
 const _listP = listHtml;
 listHtml = function (mk, fo) {
   let h = _listP(mk, fo);
-  if (mk !== 'partides') return h;
-  if (fo && CANWRITE) h = h.replace('<button class="btn sm" data-act="import"', `<button class="btn sm" data-act="caps" data-id="${esc(fo)}">Capítols</button><button class="btn sm" data-act="import"`);
+  if (mk !== 'partides' && mk !== 'modificats') return h;
+  if (mk === 'modificats' && CANWRITE) h = h.replace('<span style="flex:1"></span>', `<span style="flex:1"></span><button class="btn sm" data-act="import" data-mk="modificats" data-obra="${esc(fo || '')}">Importa des d'Excel</button>`);
+  if (fo && CANWRITE && mk === 'partides') h = h.replace('<button class="btn sm" data-act="import"', `<button class="btn sm" data-act="caps" data-id="${esc(fo)}">Capítols</button><button class="btn sm" data-act="import"`);
   const i = h.indexOf('<div class="tw">');
   if (!fo || i < 0) return h;
-  const q = (mv('partides').q || '').toLowerCase();
-  const rows = S.partides.filter((p) => p.obraId === fo && (!q || [p.codi, p.descripcio, p.capitol, p.unitat].some((v) => String(v || '').toLowerCase().includes(q))))
+  const q = (mv(mk).q || '').toLowerCase();
+  const st = mv(mk).estat, rows = S[mk].filter((p) => p.obraId === fo && (!st || p.estat === st) && (!q || [p.codi, p.descripcio, p.capitol, p.unitat].some((v) => String(v || '').toLowerCase().includes(q))))
     .sort((a, b) => (a.ordre ?? 1e9) - (b.ordre ?? 1e9) || String(a.codi).localeCompare(String(b.codi), 'ca', { numeric: true }));
-  const cols = M.partides.cols.filter((c) => c !== 'obraId' && c !== 'capitol');
-  const cap = (c) => (typeof c === 'object' ? c : { l: c === 'amidament' ? etqAm(fo) : M.partides.camps.find((f) => f.k === c).l, num: ['money', 'num'].includes(M.partides.camps.find((f) => f.k === c).tp) });
-  const gr = [...capsObra(fo), ''].map((c) => ({ c, ps: rows.filter((p) => (p.capitol || '') === c) })).filter((g) => g.ps.length || (g.c && !q));
+  const cols = M[mk].cols.filter((c) => c !== 'obraId' && c !== 'capitol');
+  const cap = (c) => (typeof c === 'object' ? c : { l: c === 'amidament' && mk === 'partides' ? etqAm(fo) : M[mk].camps.find((f) => f.k === c).l, num: ['money', 'num'].includes(M[mk].camps.find((f) => f.k === c).tp) });
+  const gr = [...capsObra(fo), ''].map((c) => ({ c, ps: rows.filter((p) => (p.capitol || '') === c) })).filter((g) => g.ps.length || (g.c && !q && mk === 'partides'));
   const cos = gr.map((g) => { const t = g.ps.map(ptc), v = sum(t, (x) => x.venda);
-    return `<tr class="cap"><td colspan="${cols.length}">${esc(g.c || SENSE_CAP)} <span class="small" style="font-weight:400">· ${g.ps.length} ${g.ps.length === 1 ? 'partida' : 'partides'} · venda ${MF2.format(v)} · cost previst ${MF2.format(sum(t, (x) => x.costPrev))} · produït ${MF2.format(sum(t, (x) => x.produit))}</span></td></tr>`
-      + g.ps.map((r) => `<tr data-act="edit" data-mk="partides" data-id="${esc(r.id)}">${cols.map((c, k) => { const x = cellVal('partides', c, r); return `<td class="${x.num ? 'num' : ''} ${k === 0 || c === 'descripcio' ? 't-main' : ''}">${x.h}</td>`; }).join('')}</tr>`).join(''); }).join('');
+    return `<tr class="cap"><td colspan="${cols.length}">${esc(g.c || SENSE_CAP)} <span class="small" style="font-weight:400">· ${g.ps.length} ${g.ps.length === 1 ? 'partida' : 'partides'} · venda ${fmtM(v)} · cost previst ${MF2.format(sum(t, (x) => x.costPrev))} · produït ${MF2.format(sum(t, (x) => x.produit))}</span></td></tr>`
+      + g.ps.map((r) => `<tr data-act="edit" data-mk="${mk}" data-id="${esc(r.id)}">${cols.map((c, k) => { const x = cellVal(mk, c, r); return `<td class="${x.num ? 'num' : ''} ${k === 0 || c === 'descripcio' ? 't-main' : ''}">${x.h}</td>`; }).join('')}</tr>`).join(''); }).join('');
   return h.slice(0, i) + `<div class="tw"><table><thead><tr>${cols.map((c) => { const x = cap(c); return `<th class="${x.num ? 'num' : ''}">${esc(x.l.replace(/ \(.*\)$/, ''))}</th>`; }).join('')}</tr></thead><tbody>${cos || `<tr><td class="empty" colspan="${cols.length}">Cap resultat.</td></tr>`}</tbody></table></div>`;
 };
 
 /* Gestió de capítols */
 function obreCaps(id) {
   const l = capsObra(id);
-  drawer(`Capítols · ${obraTxt(id)}`, `<div class="muted" style="font-size:13px">Aquests capítols només són d'aquesta obra. Si en canvies el nom, canvia a totes les seves partides.</div><div id="cap-l" style="display:flex;flex-direction:column;gap:6px">${l.map((c) => capRow(c, S.partides.filter((p) => p.obraId === id && p.capitol === c).length)).join('')}</div><div><button class="btn sm" data-act="capNou" type="button">+ Afegeix un capítol</button></div>`,
+  drawer(`Capítols · ${obraTxt(id)}`, `<div class="muted" style="font-size:13px">Aquests capítols només són d'aquesta obra. Si en canvies el nom, canvia a totes les seves partides.</div><div id="cap-l" style="display:flex;flex-direction:column;gap:6px">${l.map((c) => capRow(c, [...S.partides, ...S.modificats].filter((p) => p.obraId === id && p.capitol === c).length)).join('')}</div><div><button class="btn sm" data-act="capNou" type="button">+ Afegeix un capítol</button></div>`,
     `<span class="sp"></span><button class="btn" data-act="close">Cancel·la</button><button class="btn pri" data-act="capDesa" data-id="${esc(id)}">Desa</button>`);
 }
 const capRow = (c, n) => `<div class="cap-row"><button class="btn sm" type="button" data-act="capPuja" aria-label="Puja">↑</button><input value="${esc(c)}" data-cap="${esc(c)}" aria-label="Nom del capítol" maxlength="300"><span class="small" style="white-space:nowrap">${n} part.</span>${n ? '' : '<button class="btn sm" type="button" data-act="capTreu" aria-label="Treu el capítol">×</button>'}</div>`;
@@ -70,6 +71,8 @@ async function capDesa(id) {
   try {
     const canvis = new Map(fs.filter((x) => x.vell && x.vell !== x.nou).map((x) => [x.vell, x.nou]));
     const af = S.partides.filter((p) => p.obraId === id && canvis.has(p.capitol));
+    const am = S.modificats.filter((p) => p.obraId === id && canvis.has(p.capitol));
+    for (const p of am) { const { id: pid, ...r } = p; await save('modificats', pid, { ...r, capitol: canvis.get(p.capitol) }); }
     let n = 0;
     for (const p of af) { const { id: pid, ...r } = p; await save('partides', pid, { ...r, capitol: canvis.get(p.capitol) }); b.textContent = `Desant ${++n}/${af.length}`; }
     await desaCaps(id, fs.map((x) => x.nou));
@@ -81,9 +84,9 @@ async function capDesa(id) {
 const IMPC = [['codi', 'Codi'], ['desc', 'Descripció'], ['unitat', 'Unitat'], ['am', 'Amidament'], ['pv', 'Preu unitari'], ['cost', 'Cost unitari'], ['imp', 'Import'], ['cap', 'Capítol (columna)'], ['nat', 'Tipus de fila']];
 let IMP = null;
 const _openImp = openImport;
-openImport = function (oid) {
-  IMP = { fulls: [], k: 0, m: {}, ini: 0 };
-  drawer("Importa partides d'un Excel", `<div class="fld"><label for="ix-obra">Obra</label><select id="ix-obra">${obraOpts(oid, '— Tria una obra —')}</select></div>
+openImport = function (oid, mk) {
+  IMP = { mk: mk || 'partides', fulls: [], k: 0, m: {}, ini: 0 };
+  drawer(mk === 'modificats' ? "Importa contradictòries d'un Excel" : "Importa partides d'un Excel", `<div class="fld"><label for="ix-obra">Obra</label><select id="ix-obra">${obraOpts(oid, '— Tria una obra —')}</select></div>
   <div class="fld"><label for="ix-f">Arxiu d'Excel (.xlsx, .xls, .ods o .csv)</label><input type="file" id="ix-f" class="imp-in" accept=".xlsx,.xlsm,.xls,.ods,.csv"></div>
   <div class="muted" style="font-size:13px">Es llegeix aquí mateix i no es desa res fins que ho confirmis. Pots enganxar files o actualitzar l'execució mensual amb <a href="#" data-enganxa="1">la manera anterior</a>.</div><div id="ix-cos" style="display:flex;flex-direction:column;gap:12px"></div>`,
   `<span class="sp"></span><button class="btn" data-act="close">Cancel·la</button><button class="btn pri" data-act="ixDesa" disabled>Importa</button>`);
@@ -109,7 +112,7 @@ function ixFull(k) {
 }
 function ixCalc() {
   const oid = $('#ix-obra').value, f = IMP.fulls[IMP.k], coef = +$('#ix-coef').value || 0;
-  const r = ObradorLectura.partides(f.rows, IMP.m, IMP.ini), ex = S.partides.filter((p) => p.obraId === oid), usats = new Set(), conta = {};
+  const r = ObradorLectura.partides(f.rows, IMP.m, IMP.ini), ex = S[IMP.mk].filter((p) => p.obraId === oid), usats = new Set(), conta = {};
   r.partides.forEach((p) => { conta[p.codi] = (conta[p.codi] || 0) + 1; });
   r.crear = []; r.upd = [];
   r.partides.forEach((p, i) => {
@@ -120,6 +123,7 @@ function ixCalc() {
     const rec = { codi: p.codi, descripcio: p.descripcio, unitat: normU(p.unitat, p.unitat), amidament: p.amidament, preuVenda: Math.round(p.preuVenda * coef * 10000) / 10000, ordre: i };
     if (p.capitol) rec.capitol = p.capitol;
     if (IMP.m.cost != null) rec.costUnit = p.costUnit;
+    if (IMP.mk === 'modificats' && !old) Object.assign(rec, { estat: 'Proposat', data: today(), num: rec.codi, import: r2(rec.amidament * rec.preuVenda), cost: r2(rec.amidament * (rec.costUnit || 0)) });
     (old ? r.upd : r.crear).push({ old, rec: old ? rec : { capitol: '', costUnit: 0, ...rec } });
   });
   r.venda = sum([...r.crear, ...r.upd], (x) => x.rec.amidament * x.rec.preuVenda);
@@ -147,8 +151,8 @@ async function ixDesa() {
   try {
     const l = capsObra(oid), nous = r.capitols.filter((c) => !l.includes(c));
     if (nous.length) await desaCaps(oid, l.concat(nous));
-    for (let i = 0; i < r.crear.length; i += 200) { const t = r.crear.slice(i, i + 200); await creaMolts('partides', t.map((x) => ({ id: newId('pa'), dades: { ...x.rec, obraId: oid } }))); pas(t.length); }
-    for (const x of r.upd) { const { id, ...v } = x.old; await save('partides', id, { ...v, ...x.rec }); pas(1); }
+    for (let i = 0; i < r.crear.length; i += 200) { const t = r.crear.slice(i, i + 200); await creaMolts(IMP.mk, t.map((x) => ({ id: newId(IMP.mk.slice(0, 2)), dades: { ...x.rec, obraId: oid } }))); pas(t.length); }
+    for (const x of r.upd) { const { id, ...v } = x.old; await save(IMP.mk, id, { ...v, ...x.rec }); pas(1); }
   } catch (e) { toast(`S'ha aturat després de ${n} de ${tot}. Torna a importar el mateix arxiu: les ja creades s'actualitzaran.`); b.disabled = false; return; }
   logA(`Importades ${n} partides a ${obraTxt(oid)} (${IMP.nom})`); closeDrawer(); toast(`${n} partides importades.`);
 }

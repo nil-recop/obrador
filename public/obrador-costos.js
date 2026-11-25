@@ -1,6 +1,6 @@
 /* Costos directes i indirectes de l'obra, reals i previstos.
    Compres i factures rebudes: segons el tipus (configurable) i canviable a cada comanda o factura.
-   Hores: directes, tret dels tècnics; canviable a cada part. Dietes i desplaçaments: sempre indirectes. */
+   Hores: directes, tret dels tècnics; canviable a cada part. Dietes i desplaçaments dels parts: sempre directes. */
 const TC = ['Automàtic', 'Directe', 'Indirecte'];
 const TIPUS_DEF = { 'Serveis': 'Indirecte' };
 const CAT_TECNIC = ["Cap d'obra", 'Cap de producció', 'Cap de grup', 'Tècnic'];
@@ -16,7 +16,8 @@ function natPart(p) {
 }
 const horesCost = (p) => (+p.hores || 0) * (+p.preuHora || 0);
 const extresCost = (p) => (+p.dietes || 0) + (+p.desplacament || 0);
-const dirPart = (p) => (natPart(p) === 'Directe' ? horesCost(p) : 0);
+const dirHores = (p) => (natPart(p) === 'Directe' ? horesCost(p) : 0);
+const dirPart = (p) => dirHores(p) + extresCost(p);
 
 /* Factures rebudes: la part facturada d'una comanda compta per les seves factures; la resta, pendent de facturar, per la comanda.
    Comanda tancada amb factures: només compten les factures. Factura sense comanda: compta sencera. Imports: base imposable. */
@@ -43,12 +44,13 @@ fin = function (oid) {
   f.dirCompres = sum(l.filter((x) => x.nat === 'Directe'), (x) => x.import);
   f.dirFac = sum(l.filter((x) => x.fac && x.nat === 'Directe'), (x) => x.import);
   f.indFac = sum(l.filter((x) => x.fac && x.nat !== 'Directe'), (x) => x.import);
-  f.dirMa = sum(ps, dirPart);
-  f.directe = f.dirCompres + f.dirMa;
+  f.dirMa = sum(ps, dirHores);
+  f.extres = sum(ps, extresCost);
+  f.directe = f.dirCompres + f.dirMa + f.extres;
   f.indCompres = f.compres - f.dirCompres;
   f.extres = sum(ps, extresCost);
   f.indMa = f.ma - f.dirMa - f.extres;
-  f.indirecte = f.indCompres + f.indMa + f.extres;
+  f.indirecte = f.indCompres + f.indMa;
   return f;
 };
 
@@ -61,7 +63,7 @@ econ = function (id) {
   e.modCost = sum(S.modificats.filter((m) => m.obraId === id && ['Aprovat', 'Executat'].includes(m.estat)), (m) => +m.cost);
   e.dirBase = e.dirOrigen === 'manual' ? +o.costDirPrev : part;
   e.dirPrev = e.dirOrigen ? e.dirBase + e.modCost : null;
-  e.indPrev = buit(o.costIndPrev) ? null : +o.costIndPrev;
+  e.indPrev = null;
   e.complet = e.dirPrev != null && e.indPrev != null && e.vigent > 0;
   e.netPrev = e.complet ? e.vigent - e.dirPrev - e.indPrev - e.estPrev : null;
   return e;
@@ -78,7 +80,7 @@ ctlObra = function (id) {
 
 (() => {
   const c = M.obres.camps, i = c.findIndex((f) => f.k === 'estructura');
-  c.splice(i + 1, 0, { k: 'costDirPrev', l: 'Cost directe previst (€) — buit: partides', tp: 'money', d: 2 }, { k: 'costIndPrev', l: 'Cost indirecte previst (€)', tp: 'money', d: 2 });
+  c.splice(i + 1, 0, { k: 'costDirPrev', l: 'Cost directe previst (€) — buit: partides', tp: 'money', d: 2 });
   const cc = M.comandes.camps, j = cc.findIndex((f) => f.k === 'tipus');
   cc.splice(j + 1, 0, { k: 'tipusCost', l: 'Cost directe o indirecte', tp: 'sel', o: TC });
   M.comandes.cols.splice(M.comandes.cols.indexOf('tipus') + 1, 0, { l: 'Cost', f: (o) => natHtml(natCompra(o), o.tipusCost) });
@@ -104,14 +106,14 @@ econPanel = function (id) {
   const totP = e.dirPrev != null && e.indPrev != null ? e.dirPrev + e.indPrev : null;
   const orig = e.dirOrigen === 'manual' ? 'Previsió entrada a l\'obra' : e.dirOrigen === 'partides' ? 'Previsió segons les partides' : 'Sense previsió';
   const taula = `<section class="panel" style="margin-bottom:16px"><h2>Costos directes i indirectes<span class="sp"></span><span class="small">Imports sense IVA</span></h2><div class="tw" style="border:0"><table><thead><tr><th>Cost</th><th class="num">Previst</th><th class="num">Real fins avui</th><th class="num">Consumit</th><th class="num">Disponible</th></tr></thead><tbody>
-   ${fil('Cost directe', `${orig}${e.modCost && e.dirOrigen ? ` · inclou ${fmtM(e.modCost)} de modificats` : ''}`, e.dirPrev, f.directe, 1)}
-   ${fil('&nbsp;&nbsp;Compres i factures directes', f.dirFac ? `Facturat ${fmtM(f.dirFac)}` : '', null, f.dirCompres)}${fil('&nbsp;&nbsp;Hores directes', '', null, f.dirMa)}
-   ${fil('Cost indirecte', e.indPrev == null ? 'Sense previsió' : 'Previsió entrada a l\'obra', e.indPrev, f.indirecte, 1)}
-   ${fil('&nbsp;&nbsp;Compres i factures indirectes', f.indFac ? `Facturat ${fmtM(f.indFac)}` : '', null, f.indCompres)}${fil('&nbsp;&nbsp;Hores de tècnics (parts)', '', null, f.indMa)}${fil('&nbsp;&nbsp;Dietes i desplaçaments (parts)', '', null, f.extres)}${fil('&nbsp;&nbsp;Apartat Indirectes', 'Dedicacions, dietes, desplaçaments, càrregues i altres', null, f.indImp)}
+   ${fil('Cost directe', `${orig}${e.modCost && e.dirOrigen ? ` · inclou ${fmtM(e.modCost)} de contradictòries` : ''}`, e.dirPrev, f.directe, 1)}
+   ${fil('&nbsp;&nbsp;Compres i factures directes', f.dirFac ? `Facturat ${fmtM(f.dirFac)}` : '', null, f.dirCompres)}${fil('&nbsp;&nbsp;Hores directes', '', null, f.dirMa)}${fil('&nbsp;&nbsp;Dietes i desplaçaments (parts)', '', null, f.extres)}
+   ${fil('Cost indirecte', e.indPrev == null ? 'Sense previsió' : 'Total del quadre d\'Indirectes', e.indPrev, f.indirecte, 1)}
+   ${fil('&nbsp;&nbsp;Compres i factures indirectes', f.indFac ? `Facturat ${fmtM(f.indFac)}` : '', null, f.indCompres)}${fil('&nbsp;&nbsp;Hores de tècnics (parts)', '', null, f.indMa)}${fil('&nbsp;&nbsp;Quadre d\'indirectes', 'Mesos acabats', null, f.indImp)}
    ${fil("Cost d'obra", 'Directe + indirecte', totP, f.cost, 1)}
   </tbody></table></div><div class="pb small" style="border-top:1px solid var(--line)">${e.complet
     ? `<b style="font-size:14px;color:${e.netPrev < 0 ? 'var(--bad)' : 'var(--ok)'}">Resultat previst: ${M2(e.netPrev)} · ${p1(e.netPrev / e.vigent)}</b><br>Contracte vigent ${M2(e.vigent)} − directe ${M2(e.dirPrev)} − indirecte ${M2(e.indPrev)} − estructura ${M2(e.estPrev)}`
-    : `Per calcular el resultat previst falta: ${[e.vigent > 0 ? '' : 'el contracte', e.dirPrev == null ? 'el cost directe' : '', e.indPrev == null ? 'el cost indirecte' : ''].filter(Boolean).join(', ')}. S'entren a «Edita l'obra».`}</div></section>`;
+    : `Per calcular el resultat previst falta: ${[e.vigent > 0 ? '' : 'el contracte', e.dirPrev == null ? 'el cost directe' : '', e.indPrev == null ? 'el cost indirecte' : ''].filter(Boolean).join(', ')}. El directe s'entra a «Edita l'obra» o surt de les partides; l'indirecte, a l'apartat Indirectes.`}</div></section>`;
   return _panelC(id)
     .replace(`Compres ${fmtM(f.compres)} · mà d'obra ${fmtM(f.ma)}`, `Directe ${fmtM(f.directe)} · indirecte ${fmtM(f.indirecte)}`)
     .replace(/Segons les partides: brut ([^−]*) − estructura ([^.]*)\. /, (m, a, b) => `Segons les partides: brut ${a.trim()} − estructura ${b} − indirectes ${fmtM(ctlObra(id).indFinal)}. `) + taula;
@@ -123,14 +125,14 @@ econForm = function () {
   const fm = $('#frm'), box = $('#econ-calc');
   if (!fm || fm.dataset.mk !== 'obres' || !box) return;
   const e = fm.elements, ct = +e.pressupost.value || 0, pct = buit(e.estructura.value) ? estrGeneral() : +e.estructura.value;
-  if (buit(e.costDirPrev.value) || buit(e.costIndPrev.value) || !ct) return;
-  const r = ct - e.costDirPrev.value - e.costIndPrev.value - ct * pct / 100;
-  box.innerHTML += `<span>Cost directe previst</span><b>−${MF2.format(e.costDirPrev.value)}</b><span>Cost indirecte previst</span><b>−${MF2.format(e.costIndPrev.value)}</b><span style="font-weight:600">Resultat previst (sense modificats)</span><b>${MF2.format(r)} · ${p1(r / ct)}</b>`;
+  if (buit(e.costDirPrev.value) || !ct) return;
+  const r = ct - e.costDirPrev.value - ct * pct / 100;
+  box.innerHTML += `<span>Cost directe previst</span><b>−${MF2.format(e.costDirPrev.value)}</b><span style="font-weight:600">Resultat abans d'indirectes i contradictòries</span><b>${MF2.format(r)} · ${p1(r / ct)}</b>`;
 };
 const _saveC = saveForm;
 saveForm = async function () {
   const fm = $('#frm');
-  if (fm && fm.dataset.mk === 'obres') for (const k of ['costDirPrev', 'costIndPrev']) if (+fm.elements[k].value < 0) { toast('Els costos previstos no poden ser negatius.'); fm.elements[k].focus(); return; }
+  if (fm && fm.dataset.mk === 'obres') for (const k of ['costDirPrev']) if (+fm.elements[k].value < 0) { toast('Els costos previstos no poden ser negatius.'); fm.elements[k].focus(); return; }
   return _saveC();
 };
 
@@ -139,7 +141,7 @@ const _cfgC = estrConfigHtml;
 estrConfigHtml = function () {
   const ts = M.comandes.camps.find((f) => f.k === 'tipus').o;
   return _cfgC() + `<section class="panel" style="margin-bottom:16px"><h2>Costos directes i indirectes</h2><div class="pb"><div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">${ts.map((t, i) => `<label style="display:flex;flex-direction:column;gap:4px;font-size:13px">${esc(t)}<select data-tc="${esc(t)}" id="tc-${i}" ${CANWRITE ? '' : 'disabled'} style="border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;padding:7px 10px;font:inherit">${['Directe', 'Indirecte'].map((x) => `<option ${x === tipusCompra(t) ? 'selected' : ''}>${x}</option>`).join('')}</select></label>`).join('')}${CANWRITE ? '<button class="btn sm" data-act="saveTc">Desa</button>' : ''}</div>
-  <div class="small" style="margin-top:10px">Valor de cada tipus de compra o despesa; es pot canviar a cada comanda i a cada factura rebuda. Les hores són directes, tret dels tècnics (${CAT_TECNIC.join(', ').toLowerCase()}). Les dietes i els desplaçaments són sempre indirectes.</div></div></section>`;
+  <div class="small" style="margin-top:10px">Valor de cada tipus de compra o despesa; es pot canviar a cada comanda i a cada factura rebuda. Les hores són directes, tret dels tècnics (${CAT_TECNIC.join(', ').toLowerCase()}). Les dietes i els desplaçaments dels parts són sempre directes.</div></div></section>`;
 };
 document.addEventListener('click', async (ev) => {
   if (!ev.target.closest('[data-act="saveTc"]')) return;

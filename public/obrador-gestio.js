@@ -7,13 +7,13 @@ Object.assign(TONE,{'Presentada':'info','Conformada':'ok','Facturada':'warn','Pr
 Object.assign(S,{partides:[],certificacions:[],modificats:[],ofertes:[],estudis:[],qualitat:[],personal:[],tercers:[]});
 
 Object.assign(M,{
- partides:{t:"Producció i cost",s:"partida",tit:"descripcio",sort:"codi",camps:[
+ partides:{t:"Partides",s:"partida",tit:"descripcio",sort:"codi",camps:[
   {k:"obraId",l:"Obra",tp:"obra",req:1},{k:"codi",l:"Codi partida",tp:"code",req:1,ph:"REP.01"},
   {k:"capitol",l:"Capítol",tp:"sel",o:CAPITOLS,blank:1},{k:"descripcio",l:"Descripció",tp:"text",req:1,w:1},
   {k:"unitat",l:"Unitat",tp:"sel",o:UNITATS},{k:"amidament",l:"Amidament contractat",tp:"num"},
   {k:"preuVenda",l:"Preu de venda (€/ud)",tp:"money",d:2},{k:"costUnit",l:"Cost previst (€/ud)",tp:"money",d:2},
   {k:"executat",l:"Executat acumulat (ud)",tp:"num"},{k:"costReal",l:"Cost real acumulat (€)",tp:"money"}],
-  cols:["codi","obraId","descripcio","unitat","amidament",
+  cols:["codi","obraId","descripcio","unitat","amidament",{l:"Preu",num:1,f:o=>MF2.format(+o.preuVenda||0)},
    {l:"% exec.",f:o=>progHtml(ptc(o).pct)},{l:"Produït",num:1,f:o=>fmtM(ptc(o).produit)},
    {l:"Cost real",num:1,f:o=>fmtM(o.costReal)},{l:"Desviació cost",num:1,f:o=>devHtml(ptc(o).desv)},
    {l:"Marge final prev.",num:1,f:o=>pctHtml(ptc(o).margeF)}]},
@@ -23,13 +23,15 @@ Object.assign(M,{
   {k:"estat",l:"Estat",tp:"sel",o:["Esborrany","Presentada","Conformada","Facturada","Cobrada"]},
   {k:"notes",l:"Notes",tp:"area",w:1}],
   cols:["num","obraId","data","origen",{l:"Aquest període",num:1,f:o=>fmtM(certPer(o))},"estat"]},
- modificats:{t:"Modificats i addicionals",s:"modificació",tit:"descripcio",sort:"num",camps:[
-  {k:"obraId",l:"Obra",tp:"obra",req:1},{k:"num",l:"Núm.",tp:"code",req:1,ph:"MOD-01"},
-  {k:"descripcio",l:"Descripció",tp:"text",req:1,w:1},{k:"import",l:"Import (sense IVA)",tp:"money"},
-  {k:"cost",l:"Cost previst (€)",tp:"money"},{k:"dies",l:"Impacte en termini (dies)",tp:"num"},
-  {k:"estat",l:"Estat",tp:"sel",o:["Proposat","Presentat al client","Aprovat","Rebutjat","Executat"]},
-  {k:"data",l:"Data",tp:"date"},{k:"notes",l:"Notes",tp:"area",w:1}],
-  cols:["num","obraId","descripcio","import","cost","dies","estat"]},
+ modificats:{t:"Partides contradictòries",s:"contradictòria",tit:"descripcio",sort:"codi",camps:[
+  {k:"obraId",l:"Obra",tp:"obra",req:1},{k:"codi",l:"Codi",tp:"code",req:1,ph:"PC.01"},
+  {k:"capitol",l:"Capítol",tp:"text",ph:"Tria'l o escriu-ne un de nou"},{k:"descripcio",l:"Descripció",tp:"text",req:1,w:1},
+  {k:"estat",l:"Estat",tp:"sel",o:["Proposat","Presentat al client","Aprovat","Rebutjat","Executat"]},{k:"unitat",l:"Unitat",tp:"sel",o:UNITATS},
+  {k:"amidament",l:"Amidament",tp:"num"},{k:"preuVenda",l:"Preu de venda (€/ud)",tp:"money",d:2},{k:"costUnit",l:"Cost previst (€/ud)",tp:"money",d:2},
+  {k:"executat",l:"Executat acumulat (ud)",tp:"num"},{k:"costReal",l:"Cost real acumulat (€)",tp:"money"},
+  {k:"data",l:"Data",tp:"date"},{k:"dies",l:"Impacte en termini (dies)",tp:"num"},{k:"notes",l:"Notes",tp:"area",w:1}],
+  cols:["codi","descripcio","unitat","amidament",{l:"Preu",num:1,f:o=>MF2.format(+o.preuVenda||0)},{l:"Import",num:1,f:o=>fmtM(o.import)},
+   {l:"% exec.",f:o=>progHtml(ptc(o).pct)},{l:"Produït",num:1,f:o=>fmtM(ptc(o).produit)},{l:"Marge final prev.",num:1,f:o=>pctHtml(ptc(o).margeF)},"estat"]},
  ofertes:{t:"Comparatius d'ofertes",s:"oferta",tit:"proveidor",camps:[
   {k:"comparatiu",l:"Concepte a comparar",tp:"text",req:1,w:1,ph:"Repicat i estucat façana nord"},
   {k:"obraId",l:"Obra",tp:"obra"},{k:"proveidor",l:"Proveïdor / subcontractista",tp:"text",req:1},
@@ -99,7 +101,7 @@ COLS.push("partides","certificacions","modificats","ofertes","estudis","qualitat
  };
  const i=NAV.findIndex(g=>g.g==="Documents");
  NAV.splice(i,0,
-  {g:"Control d'obra",items:[["gestio","Control de gestió",ic.gestio],["partides","Producció i cost",ic.partides],["certificacions","Certificacions",ic.cert],["modificats","Modificats",ic.mod]]},
+  {g:"Control d'obra",items:[["gestio","Control de gestió",ic.gestio],["partides","Partides",ic.partides],["certificacions","Certificacions",ic.cert],["modificats","Contradictòries",ic.mod]]},
   {g:"Estudis",items:[["estudis","Estudis de costos",ic.est],["ofertes","Comparatius d'ofertes",ic.of]]});
  const g=NAV.find(x=>x.g==="Gestió");g.g="Empresa i gestió";
  g.items.push(["tercers","Subcontractistes",ic.terc],["personal","Personal i formació",ic.pers],["qualitat","Qualitat i seguretat",ic.qual]);
@@ -117,7 +119,7 @@ function expHtml(v){
   return s;
 }
 const devHtml=v=>v==null?'<span class="muted">—</span>':`<span style="color:${v>0?'var(--bad)':v<0?'var(--ok)':'inherit'}">${v>0?'+':''}${fmtM(v)}</span>`;
-const pctHtml=v=>v==null?'<span class="muted">—</span>':`<span style="color:${v<0?'var(--bad)':'var(--ok)'}">${(v*100).toFixed(1)}%</span>`;
+const pctHtml=v=>v==null?'<span class="muted">—</span>':`<span style="color:${v<0?'var(--bad)':'var(--ok)'}">${fmtN(v*100)}%</span>`;
 const eyeb=mk=>['obres','tasques','parts'].includes(mk)?'Obra':['partides','certificacions','modificats'].includes(mk)?"Control d'obra":['estudis','ofertes'].includes(mk)?'Estudis':['qualitat','personal','tercers'].includes(mk)?'Empresa':'Gestió';
 
 /* ---------- Càlculs ---------- */
@@ -146,17 +148,17 @@ function calcOther(mk,o,id){
     return row('Cost directe',M2(e.cd))+row(`Despeses generals ${+o.dg||0}%`,M2(e.dgI))+row(`Benefici industrial ${+o.bi||0}%`,M2(e.biI))
      +row('Preu de contracte (PEC)',M2(e.pec))+row(`Baixa ${+o.baixa||0}%`,'−'+M2(e.baixaI))
      +row('<span style="font-weight:600">Preu d\'oferta sense IVA</span>',M2(e.oferta))+row('Oferta amb IVA 21%',M2(e.oferta+e.iva))
-     +row('Benefici resultant (oferta − cost − DG)',M2(e.ben)+(e.biPct==null?'':' · '+(e.biPct*100).toFixed(1)+'%'));
+     +row('Benefici resultant (oferta − cost − DG)',M2(e.ben)+(e.biPct==null?'':' · '+fmtN(e.biPct*100)+'%'));
   }
-  if(mk==='partides'){
+  if(mk==='partides'||mk==='modificats'){
     const p=ptc(o);
-    return row('Venda contractada',M2(p.venda))+row('Cost previst',M2(p.costPrev))+row('Marge previst',p.margePrev==null?'—':(p.margePrev*100).toFixed(1)+'%')
-     +row('Execució',p.pct.toFixed(1)+'%')+row('Produït a preu de venda',M2(p.produit))+row('Cost guanyat (executat × cost previst)',M2(p.costGuanyat))
+    return row('Venda contractada',M2(p.venda))+row('Cost previst',M2(p.costPrev))+row('Marge previst',p.margePrev==null?'—':fmtN(p.margePrev*100)+'%')
+     +row('Execució',fmtN(p.pct)+'%')+row('Produït a preu de venda',M2(p.produit))+row('Cost guanyat (executat × cost previst)',M2(p.costGuanyat))
      +row('Desviació de cost',p.desv==null?'sense cost imputat':(p.desv>0?'+':'')+M2(p.desv))+row('Cost final previst',M2(p.eacF))
-     +row('Marge final previst',p.margeF==null?'—':(p.margeF*100).toFixed(1)+'%');
+     +row('Marge final previst',p.margeF==null?'—':fmtN(p.margeF*100)+'%');
   }
   if(mk==='certificacions'){
-    const pr=sum(S.partides.filter(x=>x.obraId===o.obraId),x=>ptc(x).produit);
+    const pr=ctlObra(o.obraId).produit;
     return row("Import d'aquest període",M2(certPer(o)))+row('Produït acumulat a partides',M2(pr))+row('Produït − certificat a origen',M2(pr-(+o.origen||0)));
   }
   if(mk==='ofertes'){
@@ -171,7 +173,7 @@ function calcOther(mk,o,id){
 
 function ctlObra(id){
   const o=obra(id)||{};
-  const ps=S.partides.filter(p=>p.obraId===id);
+  const ps=[...S.partides.filter(p=>p.obraId===id),...S.modificats.filter(p=>p.obraId===id&&p.codi!=null&&['Aprovat','Executat'].includes(p.estat)).map(p=>({...p,esMod:1}))];
   const cs=ps.map(p=>({p,c:ptc(p)}));
   const venda=sum(cs,x=>x.c.venda),costPrev=sum(cs,x=>x.c.costPrev),produit=sum(cs,x=>x.c.produit);
   const tr=cs.filter(x=>x.c.desv!=null);
@@ -197,6 +199,7 @@ function tresoreria(){
     else b=B.find(x=>x.k===String(f.venciment).slice(0,7))||B[B.length-1];
     if(f.sentit==='Emesa')b.cob+=a;else b.pag+=a;
   });
+  B[B.length-1].cob+=sum(S.certificacions.filter(c=>c.estat==='Facturada'),c=>certPer(c));
   let s=0;B.forEach(b=>{b.net=b.cob-b.pag;s+=b.net;b.saldo=s});
   return B;
 }
@@ -205,23 +208,23 @@ function tresoreria(){
 function controlHtml(id){
   const k=ctlObra(id);
   if(!k.ps.length)return `<div class="empty"><b>Encara no hi ha partides en aquesta obra</b>Importa-les des de l'Excel de l'obra (codi, descripció, unitat, amidament, preu de venda i cost) o crea-les una a una. Amb elles tindràs aquí la producció, la desviació de cost i el marge final previst.${CANWRITE?`<div><button class="btn pri" data-act="import" data-obra="${esc(id)}">Importa des d'Excel</button> <button class="btn" data-act="new" data-mk="partides" data-def='${esc(JSON.stringify({obraId:id}))}'>+ Nova partida</button></div>`:''}</div>`;
-  const pc=(a,b)=>b?(a/b*100).toFixed(1)+'%':'—';
+  const pc=(a,b)=>b?fmtN(a/b*100)+'%':'—';
   const caps={};
   capsObra(id).forEach(c=>{if(k.ps.some(p=>p.capitol===c))caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0}});k.cs.forEach(x=>{const c=x.p.capitol||'Sense capítol';const g=caps[c]||(caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0});g.n++;g.venda+=x.c.venda;g.produit+=x.c.produit;g.cost+=+x.p.costReal||0;if(x.c.desv!=null)g.desv+=x.c.desv;g.eac+=x.c.eacF});
   const top=k.cs.filter(x=>x.c.desv!=null&&x.c.desv>0).sort((a,b)=>b.c.desv-a.c.desv).slice(0,6);
   const over=k.cs.filter(x=>x.c.pct>100).length;
   const sinImp=k.f.directe-k.costImp;
   const kp=`<div class="kpis" style="margin-bottom:16px">
-   <div class="kpi"><div class="l">Venda a partides</div><div class="v">${fmtM(k.venda)}</div><div class="s">Contracte vigent ${fmtM(k.contracte)}${k.modAp?` (inclou ${fmtM(k.modAp)} de modificats)`:''}</div></div>
+   <div class="kpi"><div class="l">Venda a partides</div><div class="v">${fmtM(k.venda)}</div><div class="s">Contracte vigent ${fmtM(k.contracte)}${k.modAp?` (inclou ${fmtM(k.modAp)} de contradictòries)`:''}</div></div>
    <div class="kpi"><div class="l">Produït a preu de venda</div><div class="v">${fmtM(k.produit)}</div><div class="s">${pc(k.produit,k.venda)} d'execució · pendent de certificar <b style="color:${k.pendCert>0?'var(--warn)':'inherit'}">${fmtM(k.pendCert)}</b></div></div>
    <div class="kpi"><div class="l">Cost imputat a partides</div><div class="v">${fmtM(k.costImp)}</div><div class="s">Desviació ${devHtml(k.desv)} sobre el cost guanyat</div></div>
-   <div class="kpi"><div class="l">Marge net final previst</div><div class="v" style="color:${k.margeNet==null?'inherit':k.margeNet<0?'var(--bad)':'var(--ok)'}">${p1(k.margeNet)}</div><div class="s">Brut ${p1(k.marge)} − estructura ${pn(k.estPct)} − indirectes ${fmtM(k.indFinal)} · brut inicial ${k.margePrev==null?'—':(k.margePrev*100).toFixed(1)+'%'} · cost final previst ${fmtM(k.eac)}</div></div>
+   <div class="kpi"><div class="l">Marge net final previst</div><div class="v" style="color:${k.margeNet==null?'inherit':k.margeNet<0?'var(--bad)':'var(--ok)'}">${p1(k.margeNet)}</div><div class="s">Brut ${p1(k.marge)} − estructura ${pn(k.estPct)} − indirectes ${fmtM(k.indFinal)} · brut inicial ${k.margePrev==null?'—':fmtN(k.margePrev*100)+'%'} · cost final previst ${fmtM(k.eac)}</div></div>
   </div>`;
   return kp+`<div class="grid2"><div class="stack">
    <section class="panel"><h2>Per capítols</h2><div class="tw"><table><thead><tr><th>Capítol</th><th class="num">Partides</th><th class="num">Venda</th><th class="num">Produït</th><th class="num">Cost real</th><th class="num">Desviació</th><th class="num">Cost final prev.</th><th class="num">Marge final</th></tr></thead><tbody>
    ${Object.entries(caps).map(([c,g])=>`<tr style="cursor:default"><td class="t-main">${esc(c)}</td><td class="num">${g.n}</td><td class="num">${fmtM(g.venda)}</td><td class="num">${fmtM(g.produit)} <span class="small">(${pc(g.produit,g.venda)})</span></td><td class="num">${fmtM(g.cost)}</td><td class="num">${devHtml(g.desv)}</td><td class="num">${fmtM(g.eac)}</td><td class="num">${pctHtml(g.venda?(g.venda-g.eac)/g.venda:null)}</td></tr>`).join('')}
    </tbody></table></div></section>
-   <section class="panel"><h2>Partides amb més desviació de cost</h2>${top.length?`<ul class="alist">${top.map(x=>`<li data-act="edit" data-mk="partides" data-id="${esc(x.p.id)}"><span class="dot t-bad"></span><div class="tx">${esc(x.p.codi||'')} · ${esc(x.p.descripcio||'')}<small>Cost real ${fmtM(x.p.costReal)} · cost guanyat ${fmtM(x.c.costGuanyat)} · ${x.c.costGuanyat?(x.c.desv/x.c.costGuanyat*100).toFixed(0)+'% per sobre':'sense base'}</small></div><b class="mono" style="color:var(--bad)">+${fmtM(x.c.desv)}</b></li>`).join('')}</ul>`:`<div class="empty">Cap partida per sobre del cost previst.</div>`}</section>
+   <section class="panel"><h2>Partides amb més desviació de cost</h2>${top.length?`<ul class="alist">${top.map(x=>`<li data-act="edit" data-mk="${x.p.esMod?'modificats':'partides'}" data-id="${esc(x.p.id)}"><span class="dot t-bad"></span><div class="tx">${esc(x.p.codi||'')} · ${esc(x.p.descripcio||'')}<small>Cost real ${fmtM(x.p.costReal)} · cost guanyat ${fmtM(x.c.costGuanyat)} · ${x.c.costGuanyat?fmtN(x.c.desv/x.c.costGuanyat*100)+'% per sobre':'sense base'}</small></div><b class="mono" style="color:var(--bad)">+${fmtM(x.c.desv)}</b></li>`).join('')}</ul>`:`<div class="empty">Cap partida per sobre del cost previst.</div>`}</section>
   </div><div class="stack">
    <section class="panel"><h2>Quadrament i riscos</h2><div class="pb"><dl class="meta">
     <dt>Cost directe real</dt><dd class="mono">${fmtM(k.f.directe)}</dd>
@@ -232,8 +235,8 @@ function controlHtml(id){
     <dt>Estructura prevista</dt><dd class="mono">${fmtM(k.estPrev)} <span class="small">(${pn(k.estPct)})</span></dd>
     <dt>Venda a partides</dt><dd class="mono">${fmtM(k.venda)} <span class="small">(dif. ${fmtM(k.contracte-k.venda)})</span></dd>
     <dt>Certificat a origen</dt><dd class="mono">${fmtM(k.certOrigen)}</dd>
-    <dt>Facturat / cobrat</dt><dd class="mono">${fmtM(k.f.certificat)} / ${fmtM(k.f.cobrat)}</dd>
-    <dt>Modificats pendents</dt><dd class="mono">${fmtM(k.modPend)}</dd>
+    <dt>Facturat / cobrat</dt><dd class="mono">${fmtM(k.f.facturat)} / ${fmtM(k.f.cobrat)}</dd>
+    <dt>Contradictòries pendents</dt><dd class="mono">${fmtM(k.modPend)}</dd>
     <dt>Execució &gt; 100%</dt><dd>${over?`<b style="color:var(--warn)">${over} partides</b> (excés d'amidament)`:'Cap'}</dd>
     <dt>Sense cost imputat</dt><dd>${k.untracked?`<b style="color:var(--warn)">${k.untracked} partides</b> amb execució`:'Cap'}</dd>
    </dl></div></section>
@@ -257,21 +260,21 @@ function gestioHtml(){
   <div class="kpis">
    <div class="kpi"><div class="l">Producció pendent de certificar</div><div class="v">${fmtM(pendCert)}</div><div class="s">Obres actives · produït − certificat a origen</div></div>
    <div class="kpi"><div class="l">Certificacions per facturar</div><div class="v">${fmtM(perFact)}</div><div class="s">Conformades i encara sense factura</div></div>
-   <div class="kpi"><div class="l">Marge net final previst</div><div class="v" style="color:${margeNet==null?'inherit':margeNet<0?'var(--bad)':'var(--ok)'}">${p1(margeNet)}</div><div class="s">Brut ${p1(marge)} · brut inicial ${margePrev==null?'—':(margePrev*100).toFixed(1)+'%'} · pondera per venda de les partides</div></div>
-   <div class="kpi"><div class="l">Desviació de cost</div><div class="v">${devHtml(desv)}</div><div class="s">${guany?(desv/guany*100).toFixed(1)+'% sobre el cost guanyat':'Sense cost imputat encara'}</div></div>
+   <div class="kpi"><div class="l">Marge net final previst</div><div class="v" style="color:${margeNet==null?'inherit':margeNet<0?'var(--bad)':'var(--ok)'}">${p1(margeNet)}</div><div class="s">Brut ${p1(marge)} · brut inicial ${margePrev==null?'—':fmtN(margePrev*100)+'%'} · pondera per venda de les partides</div></div>
+   <div class="kpi"><div class="l">Desviació de cost</div><div class="v">${devHtml(desv)}</div><div class="s">${guany?fmtN(desv/guany*100)+'% sobre el cost guanyat':'Sense cost imputat encara'}</div></div>
   </div>
   ${estrConfigHtml()}
   <section class="panel" style="margin-bottom:16px"><h2>Obres actives: producció, certificació i marge</h2>
-  ${ks.length?`<div class="tw"><table><thead><tr><th>Obra</th><th class="num">Contracte vigent</th><th class="num">Produït</th><th class="num">Certificat origen</th><th class="num">Pend. certificar</th><th class="num">Facturat</th><th class="num">Cobrat</th><th class="num">Cost imputat</th><th class="num">Cost final prev.</th><th class="num">Marge brut final</th><th class="num">Cost directe</th><th class="num">Cost indirecte</th><th class="num">Estructura prev.</th><th class="num">Marge net final</th><th class="num">Desv. cost</th></tr></thead><tbody>
-  ${ks.map(({o,k})=>`<tr data-act="goObraCtl" data-id="${esc(o.id)}"><td class="t-main"><div class="code">${esc(o.codi)}</div>${esc(o.nom)}</td><td class="num">${fmtM(k.contracte)}</td><td class="num">${fmtM(k.produit)}</td><td class="num">${fmtM(k.certOrigen)}</td><td class="num" style="color:${k.pendCert>0?'var(--warn)':'inherit'}">${fmtM(k.pendCert)}</td><td class="num">${fmtM(k.f.certificat)}</td><td class="num">${fmtM(k.f.cobrat)}</td><td class="num">${fmtM(k.costImp)}</td><td class="num">${k.ps.length?fmtM(k.eac):'—'}</td><td class="num">${pctHtml(k.marge)}</td><td class="num">${fmtM(k.f.directe)}</td><td class="num">${fmtM(k.f.indirecte)}</td><td class="num">${fmtM(k.estPrev)}</td><td class="num">${pctHtml(k.margeNet)}</td><td class="num">${k.ps.length?devHtml(k.desv):'—'}</td></tr>`).join('')}
+  ${ks.length?`<div class="tw"><table><thead><tr><th>Obra</th><th class="num">Contracte vigent<br>Estructura prev.</th><th class="num">Produït<br>Pend. certificar</th><th class="num">Certificat<br>Facturat</th><th class="num">Cobrat</th><th class="num">Cost directe<br>Cost indirecte</th><th class="num">Cost imputat<br>Cost final prev.</th><th class="num">Desv. cost</th><th class="num">Marge brut<br>Marge net</th></tr></thead><tbody>
+  ${ks.map(({o,k})=>{const d2=(a,b)=>`<td class="num">${a}<span class="l2">${b}</span></td>`;return `<tr data-act="goObraCtl" data-id="${esc(o.id)}"><td class="t-main"><div class="code">${esc(o.codi)}</div>${esc(o.nom)}</td>${d2(fmtM(k.contracte),fmtM(k.estPrev))}${d2(fmtM(k.produit),fmtM(k.pendCert))}${d2(fmtM(k.certOrigen),fmtM(k.f.facturat))}<td class="num">${fmtM(k.f.cobrat)}</td>${d2(fmtM(k.f.directe),fmtM(k.f.indirecte))}${d2(fmtM(k.costImp),k.ps.length?fmtM(k.eac):'—')}<td class="num">${k.ps.length?devHtml(k.desv):'—'}</td>${d2(pctHtml(k.marge),pctHtml(k.margeNet))}</tr>`}).join('')}
   </tbody></table></div>`:`<div class="empty"><b>Cap obra activa</b>Quan hi hagi obres en preparació o execució, aquí en veuràs la producció i el marge.</div>`}
   </section>
   <div class="grid2">
    <section class="panel"><h2>Tresoreria prevista</h2><div class="tw"><table><thead><tr><th>Període</th><th class="num">Cobraments</th><th class="num">Pagaments</th><th class="num">Net</th><th class="num">Saldo acumulat</th></tr></thead><tbody>
    ${B.map(b=>`<tr style="cursor:default"><td class="t-main" style="text-transform:capitalize">${esc(b.l)}</td><td class="num">${fmtM(b.cob)}</td><td class="num">${fmtM(b.pag)}</td><td class="num" style="color:${b.net<0?'var(--bad)':'var(--ok)'}">${fmtM(b.net)}</td><td class="num"><b>${fmtM(b.saldo)}</b></td></tr>`).join('')}
-   </tbody></table></div><div class="pb small">Només factures emeses i rebudes pendents segons el seu venciment. No inclou nòmines, impostos ni quotes.</div></section>
-   <section class="panel"><h2>Modificats pendents de resposta<span class="sp"></span><span class="code">${fmtM(sum(mods,m=>+m.import))}</span></h2>
-   ${mods.length?`<ul class="alist">${mods.slice(0,8).map(m=>`<li data-act="edit" data-mk="modificats" data-id="${esc(m.id)}"><span class="dot t-warn"></span><div class="tx">${esc(m.num||'')} · ${esc(m.descripcio||'')}<small>${esc(obraTxt(m.obraId))} · ${esc(m.estat)}</small></div><b class="mono">${fmtM(m.import)}</b></li>`).join('')}</ul>`:`<div class="empty">No hi ha modificats pendents.</div>`}</section>
+   </tbody></table></div><div class="pb small">Factures rebudes pendents segons el venciment i certificacions facturades sense cobrar (sense IVA ni data prevista). No inclou nòmines, impostos ni quotes.</div></section>
+   <section class="panel"><h2>Contradictòries pendents de resposta<span class="sp"></span><span class="code">${fmtM(sum(mods,m=>+m.import))}</span></h2>
+   ${mods.length?`<ul class="alist">${mods.slice(0,8).map(m=>`<li data-act="edit" data-mk="modificats" data-id="${esc(m.id)}"><span class="dot t-warn"></span><div class="tx">${esc(m.num||'')} · ${esc(m.descripcio||'')}<small>${esc(obraTxt(m.obraId))} · ${esc(m.estat)}</small></div><b class="mono">${fmtM(m.import)}</b></li>`).join('')}</ul>`:`<div class="empty">No hi ha contradictòries pendents.</div>`}</section>
   </div>`;
 }
 
@@ -298,7 +301,7 @@ function ofertesHtml(fo){
     const sorted=g.slice().sort((a,b)=>((a.estat==='Descartada')-(b.estat==='Descartada'))||hom(a)-hom(b));
     const first=g[0];
     const def={comparatiu:first.comparatiu,obraId:first.obraId||''};
-    return `<section class="panel" style="margin-bottom:14px"><h2><span>${esc(first.comparatiu)}</span>${first.obraId&&!fo?`<span class="code">${esc((obra(first.obraId)||{}).codi||'')}</span>`:''}<span class="sp"></span>${live.length>1?`<span class="small">Dispersió ${fmtM(worst-best)} (${best?((worst-best)/best*100).toFixed(0):0}%)</span>`:''}${CANWRITE?`<button class="btn sm" data-act="new" data-mk="ofertes" data-def='${esc(JSON.stringify(def))}'>+ Oferta</button>`:''}</h2>
+    return `<section class="panel" style="margin-bottom:14px"><h2><span>${esc(first.comparatiu)}</span>${first.obraId&&!fo?`<span class="code">${esc((obra(first.obraId)||{}).codi||'')}</span>`:''}<span class="sp"></span>${live.length>1?`<span class="small">Dispersió ${fmtM(worst-best)} (${best?fmtN((worst-best)/best*100):0}%)</span>`:''}${CANWRITE?`<button class="btn sm" data-act="new" data-mk="ofertes" data-def='${esc(JSON.stringify(def))}'>+ Oferta</button>`:''}</h2>
     ${adj?`<div class="pb small" style="border-bottom:1px solid var(--line)">Adjudicat a <b>${esc(adj.proveidor)}</b> per ${fmtM(adj.import)} (homogeneïtzat ${fmtM(hom(adj))}).</div>`:''}
     <div class="tw"><table><thead><tr><th>Proveïdor</th><th>Abast</th><th class="num">Oferta</th><th class="num">Ajust</th><th class="num">Homogeneïtzat</th><th class="num">Δ vs. millor</th><th class="num">Termini</th><th>Pagament</th><th class="num">Garantia</th><th>Validesa</th><th>Estat</th><th></th></tr></thead><tbody>
     ${sorted.map(r=>{
@@ -306,7 +309,7 @@ function ofertesHtml(fo){
       const ex=String(r.exclusions||'');
       return `<tr class="${isBest?'best':''}" data-act="edit" data-mk="ofertes" data-id="${esc(r.id)}"><td class="t-main">${esc(r.proveidor)}${isBest?' <span class="pill t-ok">Millor preu</span>':''}${ex?`<div class="small">Cal afegir: ${esc(ex.slice(0,90))}${ex.length>90?'…':''}</div>`:''}</td>
       <td>${pill(r.abast)}</td><td class="num">${fmtM(r.import)}</td><td class="num">${r.ajust?fmtM(r.ajust):'—'}</td><td class="num"><b>${fmtM(h)}</b></td>
-      <td class="num">${best!=null&&r.estat!=='Descartada'&&h!==best?`+${fmtM(h-best)} <span class="small">(${best?((h-best)/best*100).toFixed(1):0}%)</span>`:'—'}</td>
+      <td class="num">${best!=null&&r.estat!=='Descartada'&&h!==best?`+${fmtM(h-best)} <span class="small">(${best?fmtN((h-best)/best*100):0}%)</span>`:'—'}</td>
       <td class="num">${r.termini?esc(r.termini)+' d':'—'}</td><td>${esc(r.pagament||'—')}</td><td class="num">${r.garantia!=null&&r.garantia!==''?esc(r.garantia)+'%':'—'}</td><td>${expHtml(r.validesa)}</td><td>${pill(r.estat)}</td>
       <td>${CANWRITE&&r.estat!=='Adjudicada'?`<button class="btn sm" data-act="adjudica" data-id="${esc(r.id)}">Adjudica</button>`:''}</td></tr>`}).join('')}
     </tbody></table></div></section>`}).join('');
@@ -444,17 +447,17 @@ openForm=function(mk,id,def){
     if(mk==='certificacions'){
       const oid=def.obraId||'';
       d.num=S.certificacions.filter(x=>x.obraId===oid).reduce((a,x)=>Math.max(a,+x.num||0),0)+1;
-      const pr=sum(S.partides.filter(x=>x.obraId===oid),x=>ptc(x).produit);
+      const pr=ctlObra(oid).produit;
       if(pr>0)d.origen=Math.round(pr*100)/100;
     }
     if(mk==='modificats'){
       const oid=def.obraId||'';
-      d.num='MOD-'+String(S.modificats.filter(x=>x.obraId===oid).length+1).padStart(2,'0');
+      d.codi='PC.'+String(S.modificats.filter(x=>x.obraId===oid).length+1).padStart(2,'0');
     }
     def=Object.assign(d,def);
   }
   _openForm(mk,id,def);
-  if(['estudis','partides','certificacions','ofertes'].includes(mk)){
+  if(['estudis','partides','modificats','certificacions','ofertes'].includes(mk)){
     const fm=$('#frm');
     if(fm){fm.insertAdjacentHTML('afterend','<div class="calc" id="calc"></div>');calcF()}
   }
@@ -475,7 +478,7 @@ calcF=function(){
 document.addEventListener('click',async e=>{
   const a=e.target.closest('[data-act]');if(!a)return;
   const act=a.dataset.act,id=a.dataset.id;
-  if(act==='import'){openImport(a.dataset.obra||'')}
+  if(act==='import'){openImport(a.dataset.obra||'',a.dataset.mk)}
   else if(act==='doImport'){doImport()}
   else if(act==='goObraCtl'){V.obraTab='control';location.hash='obra-'+id;schedule()}
   else if(act==='adjudica'){
