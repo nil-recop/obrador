@@ -318,7 +318,7 @@ function totF(f){const b=+f.base||0;const r=String(f.iva||'').startsWith('ISP')?
 const costPart=p=>(+p.hores||0)*(+p.preuHora||0)+(+p.dietes||0)+(+p.desplacament||0);
 function fin(oid){
   const o=obra(oid)||{};
-  const ce=S.certificacions.filter(c=>c.obraId===oid),org=es=>ce.filter(c=>es.includes(c.estat)).reduce((m,c)=>Math.max(m,+c.origen||0),0);
+  const ce=S.certificacions.filter(c=>c.obraId===oid),org=es=>darreraCert(c=>c.obraId===oid&&es.includes(c.estat));
   const certificat=org(['Presentada','Conformada','Facturada','Cobrada']),facturat=org(['Facturada','Cobrada']);
   const cobrat=sum(ce.filter(c=>c.estat==='Cobrada'),c=>certPer(c));
   const compres=sum(S.comandes.filter(c=>c.obraId===oid&&!['Esborrany','Cancel·lada'].includes(c.estat)),c=>+c.import);
@@ -777,6 +777,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=7"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=8"></script><script src="obrador-partides.js?v=3"></script><script src="obrador-docs.js?v=2"></script><script src="obrador-indirectes.js?v=2"></script><script src="obrador-obra.js?v=1"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=8"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=8"></script><script src="obrador-partides.js?v=3"></script><script src="obrador-docs.js?v=2"></script><script src="obrador-indirectes.js?v=2"></script><script src="obrador-obra.js?v=1"></script><script src="obrador-certificacions.js?v=1"></script>
 </body>
 </html>

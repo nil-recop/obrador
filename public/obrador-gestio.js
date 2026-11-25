@@ -131,8 +131,9 @@ function ptc(p){
   return{am,venda,costPrev,produit,costGuanyat,tracked,desv:tracked?cr-costGuanyat:null,eacF,
     pct:am?ex/am*100:0,margeF:venda?(venda-eacF)/venda:null,margePrev:venda?(venda-costPrev)/venda:null};
 }
+const darreraCert=f=>+(S.certificacions.filter(f).sort((a,b)=>(+b.num)-(+a.num))[0]||{}).origen||0;
 function certPer(c){
-  const prev=S.certificacions.filter(x=>x.obraId===c.obraId&&(+x.num)<(+c.num)).reduce((m,x)=>Math.max(m,+x.origen||0),0);
+  const prev=darreraCert(x=>x.obraId===c.obraId&&(+x.num)<(+c.num));
   return(+c.origen||0)-prev;
 }
 function estC(e){
@@ -181,7 +182,7 @@ function ctlObra(id){
   const mods=S.modificats.filter(m=>m.obraId===id);
   const modAp=sum(mods.filter(m=>['Aprovat','Executat'].includes(m.estat)),m=>+m.import);
   const modPend=sum(mods.filter(m=>['Proposat','Presentat al client'].includes(m.estat)),m=>+m.import);
-  const certOrigen=S.certificacions.filter(x=>x.obraId===id&&x.estat!=='Esborrany').reduce((a,x)=>Math.max(a,+x.origen||0),0);
+  const certOrigen=darreraCert(x=>x.obraId===id&&x.estat!=='Esborrany');
   return{o,ps,cs,venda,costPrev,produit,costImp,costGuanyat,desv,eac,modAp,modPend,certOrigen,
     pendCert:produit-certOrigen,contracte:(+o.pressupost||0)+modAp,
     marge:venda?(venda-eac)/venda:null,margePrev:venda?(venda-costPrev)/venda:null,
