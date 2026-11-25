@@ -9,7 +9,15 @@ posa('parts', 'm1', { data: '2026-02-02', obraId: 'o1', treballador: 'Altra', ho
 posa('personal', 'rp-1', { nom: 'Persona de prova', rol: 'Treballador/a', categoria: 'Capatàs', vinculacio: 'Plantilla', costHora: 20, estat: 'Actiu' });
 files.get('parts/rc-1').dades.personaId = 'rp-1';
 posa('obres', 'o2', { codi: '10002', nom: 'Obra amb baixa', estat: 'En execució', licitacio: 100000, baixa: 10, pressupost: 90000 });
-posa('factures', 'f2', { num: 'F', sentit: 'Emesa', obraId: 'o2', base: 50000, estat: 'Cobrada' });
+posa('certificacions', 'k1', { obraId: 'o2', num: 1, origen: 20000, estat: 'Cobrada', data: '2026-03-31' });
+posa('certificacions', 'k2', { obraId: 'o2', num: 2, origen: 50000, estat: 'Facturada', data: '2026-04-30' });
+posa('certificacions', 'k3', { obraId: 'o2', num: 3, origen: 60000, estat: 'Esborrany', data: '2026-05-31' });
+posa('indirectes', 'i1', { obraId: 'o2', data: '2026-03-25', tipus: "Dedicació cap d'obra", persona: 'Tècnica Prova', unitat: "% de l'import", quantitat: 20, preu: 3400, import: 680 });
+posa('indirectes', 'i2', { obraId: 'o2', data: '2026-04-25', tipus: "Dedicació cap d'obra", persona: 'Tècnica Prova', unitat: "% de l'import", quantitat: 40, preu: 3400, import: 1360 });
+posa('indirectes', 'i3', { obraId: 'o2', data: '2026-04-25', tipus: 'Dietes', quantitat: 2, preu: 12, import: 24 });
+posa('partides', 'pb', { obraId: 'o2', codi: '2', capitol: '01 Enderrocs', descripcio: 'Repicat de revestiment amb mitjans manuals i càrrega de runa sobre contenidor', unitat: 'm²', amidament: 1234.5, preuVenda: 12.345, costUnit: 8, executat: 100, actualitzat: '2026-11-25T10:00:00Z' });
+posa('modificats', 'mc', { obraId: 'o2', codi: 'PC.01', num: 'PC.01', capitol: '01 Enderrocs', descripcio: 'Contradictòria aprovada', unitat: 'ut', amidament: 10, preuVenda: 100, costUnit: 60, import: 1000, cost: 600, estat: 'Aprovat' });
+posa('modificats', 'mx', { obraId: 'o2', codi: 'PC.02', num: 'PC.02', descripcio: 'Contradictòria proposada', unitat: 'ut', amidament: 5, preuVenda: 100, import: 500, estat: 'Proposat' });
 posa('comandes', 'c2', { num: 'C', obraId: 'o2', import: 30000, estat: 'Aprovada' });
 posa('modificats', 'md', { obraId: 'o2', import: 10000, estat: 'Aprovat' });
 posa('modificats', 'mp', { obraId: 'o2', import: 7000, estat: 'Proposat' });
