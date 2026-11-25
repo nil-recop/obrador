@@ -511,7 +511,7 @@ function listHtml(mk,fixedObra){
   </div>`;
   let summary='';
   if(mk==='factures'){const em=rows.filter(f=>f.sentit==='Emesa'),re=rows.filter(f=>f.sentit==='Rebuda');summary=`<div class="tools muted" style="font-size:13px">Emeses: <b class="mono" style="color:var(--ink)">${fmtM(sum(em,f=>totF(f).total))}</b> · Rebudes: <b class="mono" style="color:var(--ink)">${fmtM(sum(re,f=>totF(f).total))}</b> · ${rows.length} factures</div>`}
-  if(mk==='parts'){summary=`<div class="tools muted" style="font-size:13px">${sum(rows,p=>+p.hores)} h · cost de mà d'obra, dietes i desplaçaments <b class="mono" style="color:var(--ink)">${fmtM(sum(rows,costPart))}</b></div>`}
+  if(mk==='parts'){summary=`<div class="tools muted" style="font-size:13px">${sum(rows,p=>+p.hores)} h · cost <b class="mono" style="color:var(--ink)">${fmtM(sum(rows,costPart))}</b> · directe ${fmtM(sum(rows,dirPart))} · indirecte ${fmtM(sum(rows,costPart)-sum(rows,dirPart))}</div>`}
   if(mk==='comandes'){summary=`<div class="tools muted" style="font-size:13px">Compromès (aprovat o rebut): <b class="mono" style="color:var(--ink)">${fmtM(sum(rows.filter(c=>['Aprovada','Rebuda'].includes(c.estat)),c=>+c.import))}</b></div>`}
   if(!S[mk].filter(r=>!fixedObra||r.obraId===fixedObra).length)return tools.replace(/<input[^>]*>/,'').replace(/<select[\s\S]*?<\/select>/g,'')+emptyHtml(`Encara no hi ha cap ${m.s}`,fixedObra?'Aquesta obra encara no en té cap.':'Crea el primer registre per començar.',mk,def);
   if(kan){
@@ -544,7 +544,7 @@ function obraHtml(id){
       <dt>Client</dt><dd>${esc(o.client||'—')}</dd><dt>Ubicació</dt><dd>${esc(o.ubicacio||'—')}</dd><dt>Tipologia</dt><dd>${esc(o.tipus||'—')}</dd>
       <dt>Cap d'obra</dt><dd>${esc(o.cap||'—')}</dd><dt>Superfície</dt><dd class="mono">${o.superficie?esc(o.superficie)+' m²':'—'}</dd>
       <dt>Termini</dt><dd>${fmtD(o.inici)} → ${fmtD(o.fi)}</dd><dt>Ràtio</dt><dd class="mono">${o.superficie&&ec.vigent?fmtM(ec.vigent/o.superficie)+'/m²':'—'}</dd>
-      <dt>Documents</dt><dd>${nd} fitxers</dd><dt>Cost compres</dt><dd class="mono">${fmtM(f.compres)}</dd><dt>Cost mà d'obra</dt><dd class="mono">${fmtM(f.ma)}</dd>
+      <dt>Documents</dt><dd>${nd} fitxers</dd><dt>Cost directe</dt><dd class="mono">${fmtM(f.directe)}</dd><dt>Cost indirecte</dt><dd class="mono">${fmtM(f.indirecte)}</dd>
     </dl></div></section></div>`;
   }else if(tb==='control')body=controlHtml(id);else if(tb==='docs')body=docsHtml(id);
   else body=listHtml(tb,id);
@@ -554,7 +554,7 @@ function obraHtml(id){
   <div class="kpis">
     <div class="kpi"><div class="l">Contracte</div><div class="v">${fmtM(ec.vigent)}</div><div class="s">${ec.lic?'Baixa '+pn(o.baixa)+' · ':''}${ec.modAp?'modificats '+fmtM(ec.modAp)+' · ':''}avanç ${+o.avanc||0}%</div></div>
     <div class="kpi"><div class="l">Certificat</div><div class="v">${fmtM(f.certificat)}</div><div class="s">${ec.vigent?((f.certificat/ec.vigent)*100).toFixed(1)+'% del contracte':'—'} · cobrat ${fmtM(f.cobrat)}</div></div>
-    <div class="kpi"><div class="l">Cost real</div><div class="v">${fmtM(f.cost)}</div><div class="s">Compres ${fmtM(f.compres)} · M.O. ${fmtM(f.ma)}</div></div>
+    <div class="kpi"><div class="l">Cost real</div><div class="v">${fmtM(f.cost)}</div><div class="s">Directe ${fmtM(f.directe)} · indirecte ${fmtM(f.indirecte)}</div></div>
     <div class="kpi"><div class="l">Marge net sobre certificat</div><div class="v" style="color:${ec.netPct==null?'inherit':ec.netPct<0?'var(--bad)':'var(--ok)'}">${p1(ec.netPct)}</div><div class="s">${fmtM(ec.net)} · brut ${p1(ec.brutPct)} · estructura ${pn(ec.pct)}</div></div>
   </div>
   <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" aria-selected="${k===tb}" class="${k===tb?'on':''}" data-act="otab" data-v="${k}">${l}</button>`).join('')}</div>${body}`;
@@ -781,6 +781,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-gestio.js?v=4"></script><script src="obrador-personal.js?v=3"></script><script src="obrador-economia.js?v=4"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-gestio.js?v=5"></script><script src="obrador-personal.js?v=3"></script><script src="obrador-economia.js?v=4"></script><script src="obrador-costos.js?v=5"></script>
 </body>
 </html>
