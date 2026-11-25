@@ -10,10 +10,17 @@ async function desaCaps(id, l) { const { id: _, ...o } = obra(id); await save('o
   const i = M.partides.camps.findIndex((f) => f.k === 'capitol');
   M.partides.camps[i] = { k: 'capitol', l: 'Capítol', tp: 'text', ph: "Tria'l o escriu-ne un de nou" };
   M.partides.cols.splice(1, 0, 'capitol');
+  M.partides.camps.find((f) => f.k === 'amidament').l = "Amidament contractat · PEC + baixa, si n'hi ha";
   const s = document.createElement('style');
   s.textContent = 'tr.cap td{background:var(--sunk);font-weight:600;cursor:default}tr.cap td:first-child{overflow-wrap:anywhere}.imp-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.imp-cols label,.cap-row{font-size:13px}.imp-cols select{width:100%;margin-top:3px}.imp-cols select,.imp-in,.cap-row input{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;padding:7px 9px;font:inherit;box-sizing:border-box;min-width:0}.cap-row{display:flex;gap:6px;align-items:center}.cap-row input{flex:1}';
   document.head.append(s);
 })();
+
+/* Amidaments: punt als milers i coma als decimals */
+const fmtAm = (v) => (v == null || v === '' || !isFinite(+v) ? '—' : (+v).toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3, useGrouping: 'always' }));
+const etqAm = (oid) => 'Amidament contractat · PEC' + (+(obra(oid) || {}).baixa > 0 ? ' + baixa' : '');
+const _cellP = cellVal;
+cellVal = function (mk, c, r) { return mk === 'partides' && c === 'amidament' ? { h: fmtAm(r.amidament), num: 1 } : _cellP(mk, c, r); };
 
 /* Formulari: suggereix els capítols de l'obra triada */
 function capLlista() {
@@ -21,6 +28,7 @@ function capLlista() {
   if (!fm || fm.dataset.mk !== 'partides') return;
   let d = $('#caps-obra');
   if (!d) { d = document.createElement('datalist'); d.id = 'caps-obra'; fm.after(d); fm.elements.capitol.setAttribute('list', 'caps-obra'); fm.elements.capitol.autocomplete = 'off'; }
+  const et = document.querySelector('label[for="fld-amidament"]'); if (et && fm.elements.obraId.value) et.textContent = etqAm(fm.elements.obraId.value);
   d.innerHTML = capsObra(fm.elements.obraId.value).map((c) => `<option value="${esc(c)}">`).join('');
 }
 const _openP = openForm;
@@ -39,7 +47,7 @@ listHtml = function (mk, fo) {
   const rows = S.partides.filter((p) => p.obraId === fo && (!q || [p.codi, p.descripcio, p.capitol, p.unitat].some((v) => String(v || '').toLowerCase().includes(q))))
     .sort((a, b) => (a.ordre ?? 1e9) - (b.ordre ?? 1e9) || String(a.codi).localeCompare(String(b.codi), 'ca', { numeric: true }));
   const cols = M.partides.cols.filter((c) => c !== 'obraId' && c !== 'capitol');
-  const cap = (c) => (typeof c === 'object' ? c : { l: M.partides.camps.find((f) => f.k === c).l, num: ['money', 'num'].includes(M.partides.camps.find((f) => f.k === c).tp) });
+  const cap = (c) => (typeof c === 'object' ? c : { l: c === 'amidament' ? etqAm(fo) : M.partides.camps.find((f) => f.k === c).l, num: ['money', 'num'].includes(M.partides.camps.find((f) => f.k === c).tp) });
   const gr = [...capsObra(fo), ''].map((c) => ({ c, ps: rows.filter((p) => (p.capitol || '') === c) })).filter((g) => g.ps.length || (g.c && !q));
   const cos = gr.map((g) => { const t = g.ps.map(ptc), v = sum(t, (x) => x.venda);
     return `<tr class="cap"><td colspan="${cols.length}">${esc(g.c || SENSE_CAP)} <span class="small" style="font-weight:400">· ${g.ps.length} ${g.ps.length === 1 ? 'partida' : 'partides'} · venda ${MF2.format(v)} · cost previst ${MF2.format(sum(t, (x) => x.costPrev))} · produït ${MF2.format(sum(t, (x) => x.produit))}</span></td></tr>`
@@ -130,7 +138,7 @@ function ixPrev() {
   ${IMP.m.dubte ? '<div style="color:var(--warn)">No és clar quina columna és el preu i quina l\'amidament: comprova-ho.</div>' : ''}
   ${dif > Math.max(1, Math.abs(r.importFull) * 0.005) ? `<div style="color:var(--warn)">Amidament × preu dona ${MF2.format(calc)}, que no quadra amb la columna d'import. Revisa les columnes.</div>` : ''}
   ${r.partides.some((p) => !p.capitol) ? `<div style="color:var(--warn)">${r.partides.filter((p) => !p.capitol).length} partides sense capítol.</div>` : ''}
-  <div class="tw" style="margin-top:8px;max-height:340px;overflow:auto"><table><thead><tr><th>Codi</th><th>Descripció</th><th>Ut</th><th class="num">Amid.</th><th class="num">Preu</th></tr></thead><tbody>${r.partides.slice(0, 60).map((p, i, a) => `${!i || a[i - 1].capitol !== p.capitol ? `<tr class="cap"><td colspan="5">${esc(p.capitol || SENSE_CAP)}</td></tr>` : ''}<tr style="cursor:default"><td class="code">${esc(p.codi)}</td><td>${esc(p.descripcio.slice(0, 90))}</td><td>${esc(p.unitat)}</td><td class="num">${esc(p.amidament.toLocaleString('ca-ES'))}</td><td class="num">${MF2.format(p.preuVenda * coef)}</td></tr>`).join('')}</tbody></table></div>${r.partides.length > 60 ? `<div class="small">Es mostren les 60 primeres.</div>` : ''}`;
+  <div class="tw" style="margin-top:8px;max-height:340px;overflow:auto"><table><thead><tr><th>Codi</th><th>Descripció</th><th>Ut</th><th class="num">Amid.</th><th class="num">Preu</th></tr></thead><tbody>${r.partides.slice(0, 60).map((p, i, a) => `${!i || a[i - 1].capitol !== p.capitol ? `<tr class="cap"><td colspan="5">${esc(p.capitol || SENSE_CAP)}</td></tr>` : ''}<tr style="cursor:default"><td class="code">${esc(p.codi)}</td><td>${esc(p.descripcio.slice(0, 90))}</td><td>${esc(p.unitat)}</td><td class="num">${fmtAm(p.amidament)}</td><td class="num">${MF2.format(p.preuVenda * coef)}</td></tr>`).join('')}</tbody></table></div>${r.partides.length > 60 ? `<div class="small">Es mostren les 60 primeres.</div>` : ''}`;
 }
 async function ixDesa() {
   const oid = $('#ix-obra').value; if (!oid) return;
