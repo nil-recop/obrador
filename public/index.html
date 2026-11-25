@@ -781,6 +781,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-gestio.js?v=5"></script><script src="obrador-personal.js?v=3"></script><script src="obrador-economia.js?v=4"></script><script src="obrador-costos.js?v=5"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-gestio.js?v=5"></script><script src="obrador-personal.js?v=3"></script><script src="obrador-economia.js?v=4"></script><script src="obrador-costos.js?v=6"></script>
 </body>
 </html>

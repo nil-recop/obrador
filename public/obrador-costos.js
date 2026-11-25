@@ -1,5 +1,5 @@
 /* Costos directes i indirectes de l'obra, reals i previstos.
-   Compres: segons el tipus (configurable) i canviable a cada comanda.
+   Compres i factures rebudes: segons el tipus (configurable) i canviable a cada comanda o factura.
    Hores: directes, tret dels tècnics; canviable a cada part. Dietes i desplaçaments: sempre indirectes. */
 const TC = ['Automàtic', 'Directe', 'Indirecte'];
 const TIPUS_DEF = { 'Serveis': 'Indirecte' };
@@ -18,11 +18,31 @@ const horesCost = (p) => (+p.hores || 0) * (+p.preuHora || 0);
 const extresCost = (p) => (+p.dietes || 0) + (+p.desplacament || 0);
 const dirPart = (p) => (natPart(p) === 'Directe' ? horesCost(p) : 0);
 
+/* Factures rebudes: la part facturada d'una comanda compta per les seves factures; la resta, pendent de facturar, per la comanda.
+   Comanda tancada amb factures: només compten les factures. Factura sense comanda: compta sencera. Imports: base imposable. */
+const comandaDe = (f) => S.comandes.find((c) => c.id === f.comandaId && c.obraId === f.obraId);
+const facCost = (f) => f.sentit === 'Rebuda' && f.estat !== 'Esborrany';
+const natAuto = (f) => { const c = comandaDe(f); return c ? natCompra(c) : tipusCompra(f.tipusDespesa || 'Material'); };
+const natFactura = (f) => (['Directe', 'Indirecte'].includes(f.tipusCost) ? f.tipusCost : natAuto(f));
+const facturatCom = (c) => sum(S.factures.filter((f) => facCost(f) && comandaDe(f) === c), (f) => +f.base);
+function liniesCompra(oid) {
+  const l = S.factures.filter((f) => f.obraId === oid && facCost(f)).map((f) => ({ fac: 1, nat: natFactura(f), import: +f.base || 0 }));
+  S.comandes.filter((c) => c.obraId === oid && !['Esborrany', 'Cancel·lada'].includes(c.estat)).forEach((c) => {
+    const fac = facturatCom(c), r = fac && c.estat === 'Tancada' ? 0 : fac ? Math.max(0, (+c.import || 0) - fac) : +c.import || 0;
+    if (r) l.push({ nat: natCompra(c), import: r });
+  });
+  return l;
+}
 const _finC = fin;
 fin = function (oid) {
   const f = _finC(oid);
-  const cs = S.comandes.filter((c) => c.obraId === oid && !['Esborrany', 'Cancel·lada'].includes(c.estat)), ps = S.parts.filter((p) => p.obraId === oid);
-  f.dirCompres = sum(cs.filter((c) => natCompra(c) === 'Directe'), (c) => +c.import);
+  const l = liniesCompra(oid), ps = S.parts.filter((p) => p.obraId === oid);
+  f.compres = sum(l, (x) => x.import);
+  f.cost = f.compres + f.ma;
+  f.marge = f.certificat ? (f.certificat - f.cost) / f.certificat : null;
+  f.dirCompres = sum(l.filter((x) => x.nat === 'Directe'), (x) => x.import);
+  f.dirFac = sum(l.filter((x) => x.fac && x.nat === 'Directe'), (x) => x.import);
+  f.indFac = sum(l.filter((x) => x.fac && x.nat !== 'Directe'), (x) => x.import);
   f.dirMa = sum(ps, dirPart);
   f.directe = f.dirCompres + f.dirMa;
   f.indCompres = f.compres - f.dirCompres;
@@ -85,9 +105,9 @@ econPanel = function (id) {
   const orig = e.dirOrigen === 'manual' ? 'Previsió entrada a l\'obra' : e.dirOrigen === 'partides' ? 'Previsió segons les partides' : 'Sense previsió';
   const taula = `<section class="panel" style="margin-bottom:16px"><h2>Costos directes i indirectes<span class="sp"></span><span class="small">Imports sense IVA</span></h2><div class="tw" style="border:0"><table><thead><tr><th>Cost</th><th class="num">Previst</th><th class="num">Real fins avui</th><th class="num">Consumit</th><th class="num">Disponible</th></tr></thead><tbody>
    ${fil('Cost directe', `${orig}${e.modCost && e.dirOrigen ? ` · inclou ${fmtM(e.modCost)} de modificats` : ''}`, e.dirPrev, f.directe, 1)}
-   ${fil('&nbsp;&nbsp;Compres directes', '', null, f.dirCompres)}${fil('&nbsp;&nbsp;Hores directes', '', null, f.dirMa)}
+   ${fil('&nbsp;&nbsp;Compres i factures directes', f.dirFac ? `Facturat ${fmtM(f.dirFac)}` : '', null, f.dirCompres)}${fil('&nbsp;&nbsp;Hores directes', '', null, f.dirMa)}
    ${fil('Cost indirecte', e.indPrev == null ? 'Sense previsió' : 'Previsió entrada a l\'obra', e.indPrev, f.indirecte, 1)}
-   ${fil('&nbsp;&nbsp;Compres indirectes', '', null, f.indCompres)}${fil('&nbsp;&nbsp;Hores indirectes (tècnics)', '', null, f.indMa)}${fil('&nbsp;&nbsp;Dietes i desplaçaments', '', null, f.extres)}
+   ${fil('&nbsp;&nbsp;Compres i factures indirectes', f.indFac ? `Facturat ${fmtM(f.indFac)}` : '', null, f.indCompres)}${fil('&nbsp;&nbsp;Hores indirectes (tècnics)', '', null, f.indMa)}${fil('&nbsp;&nbsp;Dietes i desplaçaments', '', null, f.extres)}
    ${fil("Cost d'obra", 'Directe + indirecte', totP, f.cost, 1)}
   </tbody></table></div><div class="pb small" style="border-top:1px solid var(--line)">${e.complet
     ? `<b style="font-size:14px;color:${e.netPrev < 0 ? 'var(--bad)' : 'var(--ok)'}">Resultat previst: ${M2(e.netPrev)} · ${p1(e.netPrev / e.vigent)}</b><br>Contracte vigent ${M2(e.vigent)} − directe ${M2(e.dirPrev)} − indirecte ${M2(e.indPrev)} − estructura ${M2(e.estPrev)}`
@@ -119,7 +139,7 @@ const _cfgC = estrConfigHtml;
 estrConfigHtml = function () {
   const ts = M.comandes.camps.find((f) => f.k === 'tipus').o;
   return _cfgC() + `<section class="panel" style="margin-bottom:16px"><h2>Costos directes i indirectes</h2><div class="pb"><div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">${ts.map((t, i) => `<label style="display:flex;flex-direction:column;gap:4px;font-size:13px">${esc(t)}<select data-tc="${esc(t)}" id="tc-${i}" ${CANWRITE ? '' : 'disabled'} style="border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;padding:7px 10px;font:inherit">${['Directe', 'Indirecte'].map((x) => `<option ${x === tipusCompra(t) ? 'selected' : ''}>${x}</option>`).join('')}</select></label>`).join('')}${CANWRITE ? '<button class="btn sm" data-act="saveTc">Desa</button>' : ''}</div>
-  <div class="small" style="margin-top:10px">Valor de cada tipus de compra; es pot canviar a cada comanda. Les hores són directes, tret dels tècnics (${CAT_TECNIC.join(', ').toLowerCase()}). Les dietes i els desplaçaments són sempre indirectes.</div></div></section>`;
+  <div class="small" style="margin-top:10px">Valor de cada tipus de compra o despesa; es pot canviar a cada comanda i a cada factura rebuda. Les hores són directes, tret dels tècnics (${CAT_TECNIC.join(', ').toLowerCase()}). Les dietes i els desplaçaments són sempre indirectes.</div></div></section>`;
 };
 document.addEventListener('click', async (ev) => {
   if (!ev.target.closest('[data-act="saveTc"]')) return;
@@ -130,3 +150,53 @@ document.addEventListener('click', async (ev) => {
   logA('Canviada la configuració de costos directes i indirectes');
   toast('Configuració desada.');
 });
+
+/* Factures: comanda, tipus de despesa i naturalesa del cost */
+(() => {
+  TONE.Tancada = TONE.Tancada || 'neu';
+  const ce = M.comandes.camps.find((f) => f.k === 'estat').o;
+  ce.splice(ce.indexOf('Rebuda') + 1, 0, 'Tancada');
+  M.comandes.cols.splice(M.comandes.cols.indexOf('import') + 1, 0, { l: 'Facturat', num: 1, f: (o) => (facturatCom(o) ? fmtM(facturatCom(o)) : '—') });
+  const fc = M.factures.camps, tipus = M.comandes.camps.find((f) => f.k === 'tipus').o;
+  fc.splice(fc.findIndex((f) => f.k === 'concepte') + 1, 0, { k: 'comandaId', l: 'Comanda', tp: 'comanda' }, { k: 'tipusDespesa', l: 'Tipus de despesa', tp: 'sel', o: tipus }, { k: 'tipusCost', l: 'Cost directe o indirecte', tp: 'sel', o: TC });
+  M.factures.cols.splice(M.factures.cols.indexOf('concepte') + 1, 0, { l: 'Cost', f: (o) => (o.sentit === 'Rebuda' && o.obraId ? natHtml(natFactura(o), o.tipusCost) : '<span class="muted">—</span>') });
+})();
+const _fieldF = fieldHtml;
+fieldHtml = function (f, v) {
+  if (f.tp === 'comanda') return `<div class="fld"><label for="fld-${f.k}">${esc(f.l)}</label><select id="fld-${f.k}" name="${f.k}" data-v="${esc(v || '')}" ${CANWRITE ? '' : 'disabled'}><option value="${esc(v || '')}" selected>—</option></select></div>`;
+  return _fieldF(f, f.k === 'tipusDespesa' && !v ? 'Material' : v);
+};
+function facForm(init) {
+  const fm = $('#frm');
+  if (!fm || fm.dataset.mk !== 'factures') return;
+  const e = fm.elements, reb = e.sentit.value === 'Rebuda', sel = e.comandaId;
+  const val = init ? sel.dataset.v : sel.value;
+  const cs = S.comandes.filter((c) => c.obraId === e.obraId.value && e.obraId.value && (c.id === val || !['Esborrany', 'Cancel·lada'].includes(c.estat)));
+  const perdut = init && val && !cs.some((c) => c.id === val);
+  sel.innerHTML = '<option value="">— Sense comanda —</option>' + cs.map((c) => `<option value="${esc(c.id)}">${esc([c.num, c.proveidor, fmtM(c.import)].filter(Boolean).join(' · '))}</option>`).join('') + (perdut ? `<option value="${esc(val)}">Comanda eliminada o d'una altra obra</option>` : '');
+  sel.value = perdut || cs.some((c) => c.id === val) ? val : '';
+  const c = cs.find((x) => x.id === sel.value);
+  for (const k of ['comandaId', 'tipusDespesa', 'tipusCost']) e[k].closest('.fld').style.display = reb && (k !== 'tipusDespesa' || !c) ? '' : 'none';
+  let box = $('#fac-nat');
+  if (!box) { fm.insertAdjacentHTML('afterend', '<div class="small" id="fac-nat" style="margin-top:10px"></div>'); box = $('#fac-nat'); }
+  if (!reb) { box.innerHTML = ''; return; }
+  if (!e.obraId.value) { box.innerHTML = 'Sense obra no s\'imputa a cap cost d\'obra.'; return; }
+  const f = { obraId: e.obraId.value, comandaId: sel.value, tipusDespesa: e.tipusDespesa.value, tipusCost: e.tipusCost.value }, n = natFactura(f);
+  const prov = e.tercer.value.trim(), igual = !c && prov && cs.find((x) => normC(x.proveidor) === normC(prov) && x.estat !== 'Tancada');
+  box.innerHTML = `Compta com a <b>cost ${n.toLowerCase()}</b> ${f.tipusCost === n ? '(triat a mà)' : c ? `segons la comanda ${esc(c.num || '')}` : 'segons el tipus de despesa'}, per la base imposable.`
+    + (e.estat.value === 'Esborrany' ? ' <b>Mentre sigui un esborrany no compta.</b>' : '')
+    + (igual ? `<div style="color:var(--warn)">Aquest proveïdor té la comanda ${esc(igual.num || '')} en aquesta obra. Si la factura hi correspon, tria-la; si no, es comptaran totes dues.</div>` : '');
+}
+const _openF = openForm;
+openForm = function (mk, id, def) { _openF(mk, id, def); facForm(true); };
+document.addEventListener('input', (e) => { if (e.target.closest && e.target.closest('#frm')) facForm(); });
+const _saveF = saveForm;
+saveForm = async function () {
+  const fm = $('#frm');
+  if (fm && fm.dataset.mk === 'factures' && fm.elements.sentit.value !== 'Rebuda') fm.elements.comandaId.value = '';
+  if (fm && fm.dataset.mk === 'comandes' && fm.elements.estat.value === 'Tancada') {
+    const c = S.comandes.find((x) => x.id === fm.dataset.id);
+    if (!c || !facturatCom(c)) { toast('No es pot tancar una comanda sense cap factura rebuda: el cost quedaria a zero.'); return; }
+  }
+  return _saveF();
+};
