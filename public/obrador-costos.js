@@ -107,7 +107,7 @@ econPanel = function (id) {
    ${fil('Cost directe', `${orig}${e.modCost && e.dirOrigen ? ` · inclou ${fmtM(e.modCost)} de modificats` : ''}`, e.dirPrev, f.directe, 1)}
    ${fil('&nbsp;&nbsp;Compres i factures directes', f.dirFac ? `Facturat ${fmtM(f.dirFac)}` : '', null, f.dirCompres)}${fil('&nbsp;&nbsp;Hores directes', '', null, f.dirMa)}
    ${fil('Cost indirecte', e.indPrev == null ? 'Sense previsió' : 'Previsió entrada a l\'obra', e.indPrev, f.indirecte, 1)}
-   ${fil('&nbsp;&nbsp;Compres i factures indirectes', f.indFac ? `Facturat ${fmtM(f.indFac)}` : '', null, f.indCompres)}${fil('&nbsp;&nbsp;Hores indirectes (tècnics)', '', null, f.indMa)}${fil('&nbsp;&nbsp;Dietes i desplaçaments', '', null, f.extres)}
+   ${fil('&nbsp;&nbsp;Compres i factures indirectes', f.indFac ? `Facturat ${fmtM(f.indFac)}` : '', null, f.indCompres)}${fil('&nbsp;&nbsp;Hores de tècnics (parts)', '', null, f.indMa)}${fil('&nbsp;&nbsp;Dietes i desplaçaments (parts)', '', null, f.extres)}${fil('&nbsp;&nbsp;Apartat Indirectes', 'Dedicacions, dietes, desplaçaments, càrregues i altres', null, f.indImp)}
    ${fil("Cost d'obra", 'Directe + indirecte', totP, f.cost, 1)}
   </tbody></table></div><div class="pb small" style="border-top:1px solid var(--line)">${e.complet
     ? `<b style="font-size:14px;color:${e.netPrev < 0 ? 'var(--bad)' : 'var(--ok)'}">Resultat previst: ${M2(e.netPrev)} · ${p1(e.netPrev / e.vigent)}</b><br>Contracte vigent ${M2(e.vigent)} − directe ${M2(e.dirPrev)} − indirecte ${M2(e.indPrev)} − estructura ${M2(e.estPrev)}`
