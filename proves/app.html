@@ -30,7 +30,7 @@ posa('factures', 'r4', { num: 'R4', sentit: 'Rebuda', obraId: 'o2', tipusDespesa
 posa('factures', 'r5', { num: 'R5', sentit: 'Rebuda', obraId: 'o2', base: 7777, estat: 'Esborrany' });
 posa('factures', 'r6', { num: 'R6', sentit: 'Rebuda', obraId: 'o2', comandaId: 'c6', base: 900, estat: 'Pendent' });
 posa('factures', 'r7', { num: 'R7', sentit: 'Rebuda', obraId: 'o2', comandaId: 'c2', tipusCost: 'Indirecte', base: 100, estat: 'Pendent' });
-window.FILES = files; window.CRIDES = []; window.ROL = 'edicio';
+window.FILES = files; window.CRIDES = []; window.PUJATS = {}; window.ROL = 'edicio';
 const js = (d, s = 200) => new Response(JSON.stringify(d), { status: s });
 const tk = () => 'x.' + btoa(JSON.stringify({ sub: uid })) + '.y';
 window.fetch = async (u, o = {}) => {
@@ -42,9 +42,12 @@ window.fetch = async (u, o = {}) => {
   if (p.endsWith('obrador_membres')) return js([{ user_id: uid, nom: 'Prova Admin', rol: window.ROL }]);
   if (p.endsWith('obrador_empremta')) return js([...files.values()].map((x) => x.id + x.versio).join());
   if (p.startsWith('/storage/v1/object/sign')) return js(b.paths.map((x) => ({ path: x, signedURL: '/object/sign/obrador/' + x + '?token=t' })));
+  if (p.startsWith('/storage/v1/object/authenticated/')) return new Response(window.PUJATS[p.split('/').pop()] || 'no', { status: window.PUJATS[p.split('/').pop()] ? 200 : 404 });
+  if (p.startsWith('/storage/') && m === 'POST') window.PUJATS[p.split('/').pop()] = o.body;
   if (p.startsWith('/storage/')) return js({});
   if (p.endsWith('obrador_docs')) {
     if (m === 'GET') return js([...files.values()]);
+    if (m === 'POST' && Array.isArray(b)) { const l = b.map((q) => ({ ...q, versio: 1 })); l.forEach((x) => files.set(x.coleccio + '/' + x.id, x)); return js(l, 201); }
     if (m === 'POST') { const x = { ...b, versio: 1 }; files.set(b.coleccio + '/' + b.id, x); return js([x], 201); }
     const k = g('coleccio').slice(3) + '/' + g('id').slice(3), x = files.get(k);
     if (!x || (g('versio') && g('versio') !== 'eq.' + x.versio)) return js([]);

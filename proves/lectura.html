@@ -1,0 +1,56 @@
+<!doctype html><html lang="ca"><meta charset="utf-8"><title>Proves de lectura</title><pre id="o">Executant…</pre>
+<script src="../public/obrador-lectura.js"></script>
+<script>
+// Documents i fulls inventats. Cap dada real.
+const R = []; const ok = (n, c, x) => R.push((c ? 'OK    ' : 'ERROR ') + n + (c ? '' : ' → ' + JSON.stringify(x)));
+function pdf(ls) { // ls: [x, y, text]
+  const e = (s) => [...s].map((c) => { const k = c === '€' ? 128 : c.charCodeAt(0); return k > 126 || '()\\'.includes(c) ? '\\' + k.toString(8).padStart(3, '0') : c; }).join('');
+  const st = ls.map(([x, y, s]) => `BT /F1 10 Tf ${x} ${842 - y} Td (${e(s)}) Tj ET`).join('\n');
+  const ob = ['<</Type/Catalog/Pages 2 0 R>>', '<</Type/Pages/Kids[3 0 R]/Count 1>>', '<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>', `<</Length ${st.length}>>\nstream\n${st}\nendstream`, '<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>'];
+  let s = '%PDF-1.4\n'; const of = [];
+  ob.forEach((o, i) => { of.push(s.length); s += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const x = s.length; s += `xref\n0 6\n0000000000 65535 f \n${of.map((o) => String(o).padStart(10, '0') + ' 00000 n \n').join('')}trailer<</Size 6/Root 1 0 R>>\nstartxref\n${x}\n%%EOF`;
+  return new Blob([s], { type: 'application/pdf' });
+}
+window.pdfProva = pdf;
+const nif = (p) => { for (const c of '0123456789ABCDEFGHIJ') if (ObradorLectura.nifValid(p + c)) return p + c; };
+const A = nif('B1234567'), B = nif('A7654321'), C = nif('B5550001');
+window.FACT = [[40, 50, 'MATERIALS PROVA, S.L.'], [40, 64, 'CIF: ' + A], [40, 78, 'Carrer Fals 1, 08001 Barcelona'], [350, 50, 'FACTURA'], [350, 64, 'Núm. factura: F26/0123'], [350, 78, 'Data factura: 12/03/2026'], [350, 92, 'Venciment: 11/05/2026'],
+  [350, 130, 'Client:'], [350, 144, 'LA MEVA EMPRESA, S.A.'], [350, 158, 'NIF: ' + B], [40, 220, 'Ciment'], [300, 220, '10,00'], [400, 220, '123,45'], [500, 220, '1.234,50'],
+  [40, 600, 'Base imposable'], [200, 600, '% IVA'], [280, 600, 'Quota IVA'], [420, 600, 'TOTAL FACTURA'], [40, 616, '1.234,50'], [200, 616, '21,00'], [280, 616, '259,25'], [420, 616, '1.493,75 €']];
+(async () => {
+  const L = ObradorLectura, meva = { nif: B, nom: 'La meva empresa SA' }, lg = async (ls, p = meva, c) => L.interpreta((await L.linies(pdf(ls))).linies, p, c);
+  let r = await lg(FACT);
+  ok('factura en taula', r.base === 1234.5 && r.comprovat && r.data === '2026-03-12' && r.nif === A && /^MATERIALS PROVA/.test(r.nom) && r.num === 'F26/0123' && r.classe === 'Factura' && r.iva === '21%', r);
+  r = await lg(FACT, {}); ok('sense NIF propi, avisa i tria el proveïdor', r.nif === A && r.avisos.some((a) => a.includes('més d\'un NIF')), r);
+  r = await lg([[350, 50, 'LA MEVA EMPRESA, S.A.'], [350, 64, B], [40, 100, 'Factura Nº 2026-55'], [40, 114, 'Fecha: 5 de febrero de 2026'], [300, 500, 'Base imponible 21%'], [450, 500, '1.000,00'], [300, 514, 'Base imponible 10%'], [450, 514, '200,00'], [300, 528, 'IVA'], [450, 528, '230,00'], [300, 542, 'Total a pagar'], [450, 542, '1.430,00 EUR'], [40, 800, 'Reformas Ejemplo S.L.U. - NIF ' + C + ' - Registro Mercantil']]);
+  ok('dues bases, peu amb dades del proveïdor', r.base === 1200 && r.comprovat && r.data === '2026-02-05' && r.nif === C && /Reformas Ejemplo/.test(r.nom) && r.num === '2026-55', r);
+  r = await lg([[40, 50, 'Pintures Test SCP'], [40, 64, 'NIF ' + C], [40, 90, 'Factura: 77'], [40, 104, 'Data 03.04.26'], [40, 300, 'Import net: 2.500,00 €'], [40, 320, 'Operació amb inversió del subjecte passiu art. 84'], [40, 340, 'Total factura 2.500,00 €']]);
+  ok('inversió del subjecte passiu', r.base === 2500 && r.comprovat && r.iva.startsWith('ISP') && r.data === '2026-04-03' && r.num === '77', r);
+  r = await lg([[40, 50, 'Ferros X, S.L.'], [40, 64, C], [40, 90, 'Albarà núm. A-99'], [40, 104, 'Data albarà 2026-06-01'], [300, 300, 'Subtotal'], [420, 300, '80,00'], [300, 314, 'IVA 21%'], [420, 314, '16,80'], [300, 328, 'Total'], [420, 328, '96,80']]);
+  ok('albarà amb subtotal', r.base === 80 && r.comprovat && r.classe === 'Albarà' && r.data === '2026-06-01' && r.num === 'A-99', r);
+  r = await lg([[40, 50, 'Abonaments Y, S.A.'], [40, 64, A], [40, 90, 'Factura rectificativa'], [40, 104, 'Data 10/01/2026'], [40, 300, 'Base imposable: -100,00'], [40, 314, 'IVA 21%: -21,00'], [40, 328, 'Total factura: -121,00']]);
+  ok('abonament negatiu', r.base === -100 && r.comprovat, r);
+  r = await lg([[40, 50, 'Nota sense imports']]); ok('document sense dades, no inventa res', r.base == null && r.data == null && r.nif == null && r.avisos.length >= 3, r);
+  r = await lg(FACT, meva, [{ nif: A, nom: 'Nom del directori' }]); ok('usa el nom conegut', r.nom === 'Nom del directori', r);
+  // Imatge (OCR)
+  const c = document.createElement('canvas'); c.width = 1240; c.height = 1754; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, 1240, 1754); g.fillStyle = '#000'; g.font = '26px Arial'; FACT.forEach(([x, y, s]) => g.fillText(s, x * 2.08, y * 2.08));
+  try { const q = await L.linies(await new Promise((k) => c.toBlob(k, 'image/png'))); r = L.interpreta(q.linies, meva); ok('foto (reconeixement de text)', q.escanejat && r.base === 1234.5 && r.data === '2026-03-12' && r.nif === A, [r, q.linies.map((l) => l.text)]); } catch (e) { ok('foto (reconeixement de text)', false, String(e)); }
+  // Excel
+  const X = await L.xlsx(), ll = async (aoa, t = 'xlsx') => { const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(aoa), 'Full'); return (await L.llibre(new Blob([X.write(wb, { type: 'array', bookType: t })])))[0].rows; };
+  const pt = async (aoa, t) => { const rows = await ll(aoa, t), k = L.columnes(rows); return { ...L.partides(rows, k.m, k.ini), m: k.m }; };
+  let p = await pt([['Pressupost obra X'], [], ['Codi', 'Descripció', 'Ut', 'Amidament', 'Preu', 'Import'], ['01', 'ENDERROCS'], ['01.01', 'Repicat de revestiment', 'm2', 100.5, 18.5, 1859.25], ['01.02', 'Càrrega de runa', 'm3', 12, 30, 360], ['', 'Total capítol 01', '', '', '', 2219.25], ['02', 'FAÇANA'], ['02.01', 'Estucat', 'm2', 200, 40, 8000], ['TOTAL', '', '', '', '', 10219.25]]);
+  ok('taula amb capítols', p.partides.length === 3 && p.capitols.join() === '01 ENDERROCS,02 FAÇANA' && p.partides[2].capitol === '02 FAÇANA' && p.partides[0].amidament === 100.5 && p.partides[0].preuVenda === 18.5 && Math.abs(p.importFull - 10219.25) < 0.01, p);
+  p = await pt([['Código', 'Nat', 'Ud', 'Resumen', 'CanPres', 'PrPres', 'ImpPres'], ['C01', 'Capítulo', '', 'DEMOLICIONES', 1, 1500, 1500], ['C01.1', 'Capítulo', '', 'INTERIOR', 1, 1500, 1500], ['D01', 'Partida', 'm2', 'Picado', 50, 30, 1500], ['', '', '', 'Descripción larga del picado con todo incluido.', '', '', ''], ['mo01', 'Mano de obra', 'h', 'Peón', 0.5, 20, 10], ['', '', '', '', 'Total C01', 1500, 1500]]);
+  ok('Presto: capítols i descompostos', p.partides.length === 1 && p.partides[0].descripcio === 'Picado' && p.partides[0].capitol === 'C01 DEMOLICIONES › C01.1 INTERIOR', p);
+  p = await pt([['Obra', '01', 'Pressupost 123'], ['Capítol', '01', 'TREBALLS PREVIS'], ['Subcapítol', '02', 'BASTIDES'], ['NUM.', 'CODI', 'UA', 'DESCRIPCIÓ', 'PREU', 'AMIDAMENT', 'IMPORT'], [1, 'P12D', 'm2', 'Bastida tubular', 12.5, 300, 3750], [2, 'P12E', 'm2', 'Xarxa', 2, 300, 600], ['TOTAL', 'Subcapítol', '01.02', '', '', '', 4350], ['Capítol', '02', 'PINTURA'], [1, 'P12D', 'm2', 'Pintura', 10, 50, 500]]);
+  ok('TCQ: capítol i subcapítol, codi repetit', p.partides.length === 3 && p.partides[0].codi === 'P12D' && p.partides[2].capitol === '02 PINTURA' && p.partides[0].preuVenda === 12.5 && p.partides[0].amidament === 300, p);
+  ok('TCQ: capítols anteriors a la capçalera', p.partides[0] && p.partides[0].capitol === '01 TREBALLS PREVIS › 02 BASTIDES', p.partides[0]);
+  p = await pt([['Codi', 'Descripció', 'Unitat', 'Amidament', 'Preu de venda', 'Cost unitari', 'Capítol'], ['R1', 'Repicat', 'm²', '1.420,50', '18,50 €', '11,2', 'Façana nord']]);
+  ok('columna de capítol, textos i cost', p.partides[0].amidament === 1420.5 && p.partides[0].preuVenda === 18.5 && p.partides[0].costUnit === 11.2 && p.partides[0].capitol === 'Façana nord', p);
+  p = await pt([['Codi', 'Descripció', 'Ut', 'Amidament', 'Preu', 'Import'], ['1.1', 'Partida a', 'm2', 10, 5, 50], ['1.2', 'Partida b', 'm2', 0, 5, 0]], 'biff8');
+  ok('arxiu .xls antic i amidament zero', p.partides.length === 2, p);
+  const mal = R.filter((x) => x.startsWith('ERROR')).length;
+  document.getElementById('o').textContent = R.join('\n') + `\n\n${R.length - mal}/${R.length} OK`; window.FI = 1;
+})().catch((e) => { document.getElementById('o').textContent = R.join('\n') + '\n' + e.stack; window.FI = 1; });
+</script></html>
