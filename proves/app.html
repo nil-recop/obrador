@@ -22,6 +22,14 @@ posa('parts', 'q1', { data: '2026-03-01', obraId: 'o2', treballador: 'A', ofici:
 posa('parts', 'q2', { data: '2026-03-01', obraId: 'o2', treballador: 'B', ofici: "CAP D’OBRA", hores: 10, preuHora: 30 });
 posa('parts', 'q3', { data: '2026-03-01', obraId: 'o2', treballador: 'C', ofici: 'Peó', tipusCost: 'Indirecte', hores: 1, preuHora: 100 });
 Object.assign(files.get('modificats/md').dades, { cost: 6000 });
+posa('comandes', 'c6', { num: 'C6', obraId: 'o2', proveidor: 'Prov', tipus: 'Material', import: 1000, estat: 'Tancada' });
+posa('factures', 'r1', { num: 'R1', sentit: 'Rebuda', obraId: 'o2', comandaId: 'c2', base: 12000, estat: 'Pendent' });
+posa('factures', 'r2', { num: 'R2', sentit: 'Rebuda', obraId: 'o2', comandaId: 'c3', base: 2500, estat: 'Pagada' });
+posa('factures', 'r3', { num: 'R3', sentit: 'Rebuda', obraId: 'o2', tipusDespesa: 'Serveis', base: 300, estat: 'Pendent' });
+posa('factures', 'r4', { num: 'R4', sentit: 'Rebuda', obraId: 'o2', tipusDespesa: 'Serveis', tipusCost: 'Directe', base: 40, estat: 'Pendent' });
+posa('factures', 'r5', { num: 'R5', sentit: 'Rebuda', obraId: 'o2', base: 7777, estat: 'Esborrany' });
+posa('factures', 'r6', { num: 'R6', sentit: 'Rebuda', obraId: 'o2', comandaId: 'c6', base: 900, estat: 'Pendent' });
+posa('factures', 'r7', { num: 'R7', sentit: 'Rebuda', obraId: 'o2', comandaId: 'c2', tipusCost: 'Indirecte', base: 100, estat: 'Pendent' });
 window.FILES = files; window.CRIDES = []; window.ROL = 'edicio';
 const js = (d, s = 200) => new Response(JSON.stringify(d), { status: s });
 const tk = () => 'x.' + btoa(JSON.stringify({ sub: uid })) + '.y';
