@@ -2,7 +2,7 @@
 
 Plataforma de gestió d'obra i documents. Web autònoma: no depèn de Claude.
 
-- `public/`: la web. No cal compilar res. Per veure PDF, llegir Excel i reconèixer text es carreguen pdf.js, SheetJS i Tesseract amb versió fixa; els documents es llegeixen al navegador.
+- `public/`: la web. No cal compilar res. Per veure PDF, llegir Excel i reconèixer text es carreguen pdf.js, SheetJS, Tesseract i jsPDF amb versió fixa; els documents es llegeixen al navegador.
 - `sql/`: taules, permisos i recollida automàtica dels parts de RECOPAPP.
 - `proves/`: proves amb dades inventades.
 
