@@ -14,6 +14,14 @@ posa('comandes', 'c2', { num: 'C', obraId: 'o2', import: 30000, estat: 'Aprovada
 posa('modificats', 'md', { obraId: 'o2', import: 10000, estat: 'Aprovat' });
 posa('modificats', 'mp', { obraId: 'o2', import: 7000, estat: 'Proposat' });
 posa('partides', 'pa', { obraId: 'o2', codi: '1', descripcio: 'x', amidament: 100, preuVenda: 1000, costUnit: 700 });
+Object.assign(files.get('obres/o2').dades, { costIndPrev: 5000 });
+posa('comandes', 'c3', { num: 'C3', obraId: 'o2', tipus: 'Serveis', import: 2000, estat: 'Rebuda' });
+posa('comandes', 'c4', { num: 'C4', obraId: 'o2', tipus: 'Serveis', tipusCost: 'Directe', import: 500, estat: 'Rebuda' });
+posa('comandes', 'c5', { num: 'C5', obraId: 'o2', tipus: 'Serveis', import: 9999, estat: 'Cancel·lada' });
+posa('parts', 'q1', { data: '2026-03-01', obraId: 'o2', treballador: 'A', ofici: 'Capatàs', hores: 10, preuHora: 20, dietes: 12, desplacament: 8 });
+posa('parts', 'q2', { data: '2026-03-01', obraId: 'o2', treballador: 'B', ofici: "CAP D’OBRA", hores: 10, preuHora: 30 });
+posa('parts', 'q3', { data: '2026-03-01', obraId: 'o2', treballador: 'C', ofici: 'Peó', tipusCost: 'Indirecte', hores: 1, preuHora: 100 });
+Object.assign(files.get('modificats/md').dades, { cost: 6000 });
 window.FILES = files; window.CRIDES = []; window.ROL = 'edicio';
 const js = (d, s = 200) => new Response(JSON.stringify(d), { status: s });
 const tk = () => 'x.' + btoa(JSON.stringify({ sub: uid })) + '.y';
