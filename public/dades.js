@@ -94,6 +94,11 @@
   }
   const db = {
     collection: (col) => ({ doc: (id) => doc(col, id), onSnapshot(f, e) { const o = { col, f, err: e }; oients.push(o); emet(o); return () => oients.splice(oients.indexOf(o), 1); } }),
+    // Crea molts documents de cop; cada crida es desa sencera o gens.
+    async crea(col, l) {
+      const r = await (await api(TAULA, { method: 'POST', headers: { ...J, Prefer: 'return=representation' }, body: JSON.stringify(l.map((x) => ({ coleccio: col, id: x.id, dades: x.dades }))) })).json();
+      r.forEach((x) => files.set(clau(x.coleccio, x.id), x)); avisa(col);
+    },
     doc: (cami) => { const [c, i] = cami.split('/'); return doc(c, i); },
   };
 
@@ -106,6 +111,7 @@
     },
     async delete(id) { await api(`/storage/v1/object/${BUCKET}/${encodeURIComponent(id)}`, { method: 'DELETE' }); },
   };
+  window.ObradorBaixa = async (id) => (await api(`/storage/v1/object/authenticated/${BUCKET}/${encodeURIComponent(id)}`)).blob();
   window.ObradorBlob = (id) => (signats[id] && signats[id].u) || '#documents';
   window.ObradorSigna = async (ids) => {
     const falten = ids.filter((i) => !signats[i] || signats[i].t < Date.now() - 1800000);

@@ -220,7 +220,7 @@ td.t-main{font-weight:500;min-width:160px}
 <div id="toastHost"></div>
 
 <script src="config.js?v=2"></script>
-<script src="dades.js?v=2"></script>
+<script src="dades.js?v=3"></script>
 <script>
 /* ---------- Constants & schema ---------- */
 const OBRA_ESTATS=['Licitació','Preparació','En execució','Aturada','Recepció provisional','Tancada'];
@@ -428,7 +428,7 @@ function dashHtml(){
   S.tasques.filter(x=>x.estat!=='Feta'&&x.estat!=='Bloquejada'&&x.limit&&x.limit<t).forEach(x=>att.push({tone:'warn',tx:`Tasca fora de termini: ${x.titol}`,sub:`${obraTxt(x.obraId)} · límit ${fmtD(x.limit)}`,mk:'tasques',id:x.id}));
   S.comandes.filter(c=>c.estat==='Sol·licitada').forEach(c=>att.push({tone:'info',tx:`Comanda per aprovar · ${c.num}`,sub:`${c.proveidor||''} · ${fmtM(c.import)}`,mk:'comandes',id:c.id}));
   S.actius.filter(a=>a.revisio&&a.revisio<=addDays(30)&&a.estat!=='Baixa').forEach(a=>att.push({tone:a.revisio<t?'bad':'warn',tx:`Revisió de ${a.nom}`,sub:`${a.codi||''} · ${fmtD(a.revisio)}`,mk:'actius',id:a.id}));
-  S.fitxers.filter(f=>f.estat==='En revisió'&&!f.paperera).forEach(f=>att.push({tone:'warn',tx:`Document per revisar: ${f.nom}`,sub:`${ownerTxt(f.owner)} / ${f.carpeta}`,doc:f.id}));
+
   const exp30=addDays(30);S.tercers.filter(x=>x.estat!=='No apte').forEach(x=>[['rc','Assegurança RC'],['ss','Certificat Seguretat Social'],['hisenda','Certificat Hisenda']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençut':'Venç'} el ${fmtD(x[kk])}`,mk:'tercers',id:x.id})}));S.personal.filter(x=>x.estat!=='Inactiu').forEach(x=>[['prl','Formació PRL'],['aptitud','Aptitud laboral'],['habilitacio','Habilitació']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençuda':'Venç'} el ${fmtD(x[kk])}`,mk:'personal',id:x.id})}));S.qualitat.filter(x=>x.estat!=='Tancada'&&(x.gravetat==='Greu'||(x.termini&&x.termini<t))).forEach(x=>att.push({tone:x.gravetat==='Greu'?'bad':'warn',tx:`${x.tipus}: ${x.descripcio}`,sub:`${obraTxt(x.obraId)}${x.termini?' · termini '+fmtD(x.termini):''}`,mk:'qualitat',id:x.id}));S.modificats.filter(x=>x.estat==='Presentat al client').forEach(x=>att.push({tone:'info',tx:`Modificat pendent de resposta · ${x.num||''}`,sub:`${obraTxt(x.obraId)} · ${fmtM(x.import)}`,mk:'modificats',id:x.id}));S.certificacions.filter(x=>x.estat==='Conformada').forEach(x=>att.push({tone:'warn',tx:`Certificació ${x.num} conformada: pendent de facturar`,sub:`${obraTxt(x.obraId)} · ${fmtM(certPer(x))} del període`,mk:'certificacions',id:x.id}));const recent=S.fitxers.filter(f=>!f.paperera).sort((a,b)=>String(b.actualitzat).localeCompare(String(a.actualitzat))).slice(0,6);
   const dt=new Date().toLocaleDateString('ca-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   return `
@@ -452,7 +452,7 @@ function dashHtml(){
       </tbody></table></div>`:emptyHtml('Cap obra activa','Dona d\'alta la primera obra per començar a planificar, documentar i facturar.','obres')}
       </section>
       <section class="panel"><h2>Documents recents<span class="sp"></span><a class="btn sm" href="#documents">Obre Documents</a></h2>
-      ${recent.length?`<ul class="alist">${recent.map(f=>`<li data-act="openDoc" data-id="${esc(f.id)}">${ficon(f.nom)}<div class="tx"><div>${esc(f.nom)}</div><small>${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)} · v${(f.versions||[]).length||1} · ${fmtDT(f.actualitzat)}</small></div>${pill(f.estat)}</li>`).join('')}</ul>`:`<div class="empty">Encara no s'ha pujat cap document.</div>`}
+      ${recent.length?`<ul class="alist">${recent.map(f=>`<li data-act="veuDoc" data-id="${esc(f.id)}">${ficon(f.nom)}<div class="tx"><div>${esc(f.nom)}</div><small>${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)} · v${(f.versions||[]).length||1} · ${fmtDT(f.actualitzat)}</small></div></li>`).join('')}</ul>`:`<div class="empty">Encara no s'ha pujat cap document.</div>`}
       </section>
     </div>
     <div class="stack">
@@ -588,9 +588,9 @@ function docsHtml(onlyObra){
     ${canUp?`<label class="btn pri" for="up-${onlyObra||'g'}">Puja fitxers</label><input type="file" id="up-${onlyObra||'g'}" multiple hidden data-up="${esc(cur)}">`:''}</div>
   ${canUp?`<div class="drop" data-dropf="${esc(cur)}">Arrossega fitxers aquí per pujar-los a aquesta carpeta. Si un fitxer ja existeix amb el mateix nom, es desa com a versió nova.</div>`:
     (!ASSETS&&!q&&cur!=='paperera'&&!LOCAL?`<div class="drop">Pujar fitxers requereix permís d'edició en aquesta vista. Pots consultar i descarregar els documents.</div>`:'')}
-  ${list.length?`<div class="tw"><table><thead><tr><th>Nom</th>${q?'<th>Ubicació</th>':''}<th>Estat</th><th class="num">Versió</th><th class="num">Mida</th><th>Modificat</th><th>Per</th></tr></thead><tbody>
-  ${list.map(f=>{const v=curVer(f);return `<tr data-act="openDoc" data-id="${esc(f.id)}"><td class="t-main"><span style="display:flex;align-items:center">${ficon(f.nom)}<span style="min-width:0;overflow-wrap:anywhere">${esc(f.nom)}${f.etiquetes?`<br><span class="muted" style="font-size:12px">${esc(f.etiquetes)}</span>`:''}</span></span></td>
-   ${q?`<td class="muted" style="font-size:12.5px">${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)}</td>`:''}<td>${pill(f.estat)}</td><td class="num mono">v${(f.versions||[]).length||1}</td><td class="num mono">${fmtSize(v&&v.mida)}</td><td>${fmtDT(f.actualitzat)}</td><td>${esc(nm(v&&v.per||f.actualitzatPer))}</td></tr>`}).join('')}
+  ${list.length?`<div class="tw"><table><thead><tr><th>Nom</th>${q?'<th>Ubicació</th>':''}<th class="num">Versió</th><th class="num">Mida</th><th>Modificat</th><th>Per</th><th></th></tr></thead><tbody>
+  ${list.map(f=>{const v=curVer(f);return `<tr data-act="veuDoc" data-id="${esc(f.id)}"><td class="t-main"><span style="display:flex;align-items:center">${ficon(f.nom)}<span style="min-width:0;overflow-wrap:anywhere">${esc(f.nom)}${f.etiquetes?`<br><span class="muted" style="font-size:12px">${esc(f.etiquetes)}</span>`:''}</span></span></td>
+   ${q?`<td class="muted" style="font-size:12.5px">${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)}</td>`:''}<td class="num mono">v${(f.versions||[]).length||1}</td><td class="num mono">${fmtSize(v&&v.mida)}</td><td>${fmtDT(f.actualitzat)}</td><td>${esc(nm(v&&v.per||f.actualitzatPer))}</td><td><button class="btn sm" data-act="openDoc" data-id="${esc(f.id)}">Detalls</button></td></tr>`}).join('')}
   </tbody></table></div>`:`<div class="empty"><b>${cur==='paperera'&&!q?'La paperera és buida':'Carpeta buida'}</b>${q?'Cap document coincideix amb la cerca.':cur==='paperera'?'':'Puja-hi plànols, actes, certificacions o fotografies d\'obra.'}</div>`}
   </div></div>`;
 }
@@ -606,8 +606,8 @@ async function uploadFiles(fl,folder,intoId){
       const r=await ASSETS.upload(file,{type});
       const ver={asset:r.id,nom:file.name,mida:r.sizeBytes,tipus:r.contentType,data:new Date().toISOString(),per:ME&&ME.id||null};
       let ex=intoId?S.fitxers.find(f=>f.id===intoId):S.fitxers.find(f=>!f.paperera&&f.owner===ow&&f.carpeta===carp&&f.nom===file.name);
-      if(ex){const nv=[...(ex.versions||[]),ver];const {id,...rest}=ex;await save('fitxers',ex.id,{...rest,versions:nv,estat:ex.estat==='Aprovat'?'En revisió':ex.estat});logA(`Nova versió v${nv.length} de ${ex.nom}`);toast(`${ex.nom}: desada la versió v${nv.length}.`);if(intoId)openDoc(intoId)}
-      else{const id=newId('f');await save('fitxers',id,{nom:file.name,owner:ow,carpeta:carp,estat:'Esborrany',etiquetes:'',versions:[ver]});logA(`Pujat ${file.name} a ${ownerTxt(ow)} / ${carp}`);toast(`Pujat: ${file.name}`)}
+      if(ex){const nv=[...(ex.versions||[]),ver];const {id,...rest}=ex;await save('fitxers',ex.id,{...rest,versions:nv});logA(`Nova versió v${nv.length} de ${ex.nom}`);toast(`${ex.nom}: desada la versió v${nv.length}.`);if(intoId)openDoc(intoId)}
+      else{const id=newId('f');await save('fitxers',id,{nom:file.name,owner:ow,carpeta:carp,etiquetes:'',versions:[ver]});logA(`Pujat ${file.name} a ${ownerTxt(ow)} / ${carp}`);toast(`Pujat: ${file.name}`)}
     }catch(e){
       const c=e&&e.code;
       toast(c==='too_large'?`«${file.name}» és massa gran.`:c==='unsupported_type'?`«${file.name}»: format no admès.`:c==='quota_or_state'?"L'espai d'emmagatzematge és ple.":c==='rate_limited'?'Massa pujades seguides. Espera uns segons.':`No s'ha pogut pujar «${file.name}».`);
@@ -662,28 +662,26 @@ async function saveForm(){
   closeDrawer();toast(prev?'Canvis desats.':`${m.s[0].toUpperCase()+m.s.slice(1)} creada.`);
 }
 async function openDoc(id){
-  let f=S.fitxers.find(x=>x.id===id);if(f&&window.ObradorSigna){try{await window.ObradorSigna((f.versions||[]).map(v=>v.asset).filter(Boolean))}catch(e){toast("No s'han pogut preparar els fitxers.")}f=S.fitxers.find(x=>x.id===id)}if(!f){toast("Aquest document no existeix o s'ha eliminat.");return}
-  const v=curVer(f);const src=v&&v.asset?window.ObradorBlob(v.asset):null;const isImg=v&&/^image\//.test(v.tipus||'');const isVid=v&&/^video\//.test(v.tipus||'');
-  const prev=src?(isImg?`<div class="prev"><img src="${src}" alt="${esc(f.nom)}"></div>`:isVid?`<div class="prev"><video src="${src}" controls></video></div>`:`<div class="prev" style="min-height:80px">${ficon(f.nom)}<a class="btn sm" href="${src}" target="_blank" rel="noopener">Obre el fitxer en una pestanya nova</a></div>`)
-    :`<div class="prev muted" style="min-height:70px;padding:12px;text-align:center">Registre sense fitxer adjunt${f.exemple?' (document d\'exemple)':''}.</div>`;
+  const f=S.fitxers.find(x=>x.id===id);if(!f){toast("Aquest document no existeix o s'ha eliminat.");return}
+  const v=curVer(f);
+  const prev=v&&v.asset?`<div class="prev" style="min-height:80px">${ficon(f.nom)}<button class="btn sm pri" data-act="veuDoc" data-id="${esc(id)}">Veure el document</button></div>`:'<div class="prev muted" style="min-height:70px;padding:12px;text-align:center">Registre sense fitxer adjunt.</div>';
   const ro=CANWRITE&&!f.paperera?'':'disabled';
   const [o0]=[f.owner];
   const body=`${prev}
-  <dl class="meta"><dt>Ubicació</dt><dd>${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)}</dd><dt>Estat</dt><dd>${pill(f.estat)}${f.aprovatPer&&f.estat==='Aprovat'?` <span class="muted">per ${esc(nm(f.aprovatPer))} · ${fmtD(f.aprovatData)}</span>`:''}</dd><dt>Versió actual</dt><dd class="mono">v${(f.versions||[]).length||1} · ${fmtSize(v&&v.mida)}</dd></dl>
+  <dl class="meta"><dt>Ubicació</dt><dd>${esc(ownerTxt(f.owner))} / ${esc(f.carpeta)}</dd><dt>Versió actual</dt><dd class="mono">v${(f.versions||[]).length||1} · ${fmtSize(v&&v.mida)}</dd></dl>
   <form id="dfrm" data-id="${esc(id)}" class="fgrid" novalidate>
    <div class="fld w"><label for="d-nom">Nom</label><input id="d-nom" name="nom" value="${esc(f.nom)}" ${ro}></div>
-   <div class="fld"><label for="d-estat">Estat</label><select id="d-estat" name="estat" ${ro}>${DOC_ESTATS.map(s=>`<option ${s===f.estat?'selected':''}>${s}</option>`).join('')}</select></div>
    <div class="fld"><label for="d-et">Etiquetes</label><input id="d-et" name="etiquetes" value="${esc(f.etiquetes||'')}" placeholder="p. ex. estructura, revisió B" ${ro}></div>
    <div class="fld"><label for="d-ow">Obra / àmbit</label><select id="d-ow" name="owner" ${ro}><option value="empresa" ${o0==='empresa'?'selected':''}>Empresa</option>${obraOpts(f.owner)}</select></div>
    <div class="fld"><label for="d-carp">Carpeta</label><select id="d-carp" name="carpeta" ${ro}>${(f.owner==='empresa'?CARP_EMP:CARP_OBRA).map(c=>`<option ${c===f.carpeta?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
   </form>
   <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><b style="flex:1">Historial de versions</b>
    ${ASSETS&&CANWRITE&&!f.paperera?`<label class="btn sm" for="upv">Puja versió nova</label><input type="file" id="upv" hidden data-upv="${esc(id)}">`:''}</div>
-   <ul class="vers">${(f.versions||[]).map((x,i)=>({x,i})).reverse().map(({x,i})=>`<li><span class="pill ${i===f.versions.length-1?'t-ok':'t-neu'}">v${i+1}</span><div class="tx">${esc(x.nom)}<br><span class="muted" style="font-size:12px">${esc(nm(x.per))} · ${fmtDT(x.data)} · ${fmtSize(x.mida)}</span></div>${x.asset?`<a class="btn sm" href="${esc(window.ObradorBlob(x.asset))}" target="_blank" rel="noopener">Obre</a>`:''}</li>`).join('')||'<li class="muted">Sense versions.</li>'}</ul></div>
+   <ul class="vers">${(f.versions||[]).map((x,i)=>({x,i})).reverse().map(({x,i})=>`<li><span class="pill ${i===f.versions.length-1?'t-ok':'t-neu'}">v${i+1}</span><div class="tx">${esc(x.nom)}<br><span class="muted" style="font-size:12px">${esc(nm(x.per))} · ${fmtDT(x.data)} · ${fmtSize(x.mida)}</span></div>${x.asset?`<button class="btn sm" data-act="veuDoc" data-id="${esc(id)}" data-i="${i}">Veure</button>`:''}</li>`).join('')||'<li class="muted">Sense versions.</li>'}</ul></div>
   <div class="muted" style="font-size:12.5px">Enllaç directe: mentre aquest document és obert, l'adreça de l'Obrador acaba en <span class="mono">#doc-${esc(id)}</span>. Comparteix-la amb qui ja tingui accés a l'Obrador.</div>`;
   const foot=!CANWRITE?`<span class="sp"></span><button class="btn" data-act="close">Tanca</button>`:f.paperera
    ?`${CANASSETADMIN||LOCAL?`<button class="btn danger" data-act="purge" data-id="${esc(id)}" id="purgebtn">Elimina definitivament</button>`:''}<span class="sp"></span><button class="btn pri" data-act="restore" data-id="${esc(id)}">Restaura</button>`
-   :`<button class="btn danger" data-act="trash" data-id="${esc(id)}">A la paperera</button>${f.estat!=='Aprovat'?`<button class="btn" data-act="approve" data-id="${esc(id)}">Aprova</button>`:''}<span class="sp"></span><button class="btn" data-act="close">Cancel·la</button><button class="btn pri" data-act="saveDoc">Desa</button>`;
+   :`<button class="btn danger" data-act="trash" data-id="${esc(id)}">A la paperera</button><span class="sp"></span><button class="btn" data-act="close">Cancel·la</button><button class="btn pri" data-act="saveDoc">Desa</button>`;
   drawer(f.nom,body,foot);
   if(location.hash!=='#doc-'+id)history.replaceState(null,'','#doc-'+id);
 }
@@ -706,10 +704,9 @@ document.addEventListener('click',async e=>{
     case'openDoc':openDoc(id);break;
     case'del':if(!a.classList.contains('arm')){a.classList.add('arm');a.textContent='Confirma: elimina';setTimeout(()=>{if(a.isConnected){a.classList.remove('arm');a.textContent='Elimina'}},4000);break}
       {const r=S[mk].find(x=>x.id===id);try{await remove(mk,id)}catch(err){break}logA(`Eliminada ${M[mk].s}: ${r&&(r[M[mk].tit]||r[M[mk].camps[0].k])||''}`);closeDrawer();toast('Eliminat.');if(mk==='obres')location.hash='obres'}break;
-    case'saveDoc':{const fm=$('#dfrm');const f=S.fitxers.find(x=>x.id===fm.dataset.id);const p={nom:fm.elements.nom.value.trim()||f.nom,estat:fm.elements.estat.value,etiquetes:fm.elements.etiquetes.value.trim(),owner:fm.elements.owner.value,carpeta:fm.elements.carpeta.value};
-      if(p.estat==='Aprovat'&&f.estat!=='Aprovat'){p.aprovatPer=ME&&ME.id||null;p.aprovatData=today()}
-      await docUpdate(f.id,p,f.estat!==p.estat?`${p.nom} → ${p.estat}`:(f.owner!==p.owner||f.carpeta!==p.carpeta)?`Mogut ${p.nom} a ${ownerTxt(p.owner)} / ${p.carpeta}`:`Actualitzat ${p.nom}`);closeDrawer();toast('Document desat.');break}
-    case'approve':{const f=S.fitxers.find(x=>x.id===id);await docUpdate(id,{estat:'Aprovat',aprovatPer:ME&&ME.id||null,aprovatData:today()},`Aprovat ${f.nom}`);toast('Document aprovat.');openDoc(id);break}
+    case'saveDoc':{const fm=$('#dfrm');const f=S.fitxers.find(x=>x.id===fm.dataset.id);const p={nom:fm.elements.nom.value.trim()||f.nom,etiquetes:fm.elements.etiquetes.value.trim(),owner:fm.elements.owner.value,carpeta:fm.elements.carpeta.value};
+
+      await docUpdate(f.id,p,(f.owner!==p.owner||f.carpeta!==p.carpeta)?`Mogut ${p.nom} a ${ownerTxt(p.owner)} / ${p.carpeta}`:`Actualitzat ${p.nom}`);closeDrawer();toast('Document desat.');break}
     case'trash':{const f=S.fitxers.find(x=>x.id===id);await docUpdate(id,{paperera:true},`${f.nom} enviat a la paperera`);closeDrawer();toast('Enviat a la paperera. Es pot restaurar des de Paperera.');break}
     case'restore':{const f=S.fitxers.find(x=>x.id===id);await docUpdate(id,{paperera:false},`Restaurat ${f.nom}`);closeDrawer();toast('Document restaurat.');break}
     case'purge':if(!a.classList.contains('arm')){a.classList.add('arm');a.textContent='Confirma: no es pot desfer';setTimeout(()=>{if(a.isConnected){a.classList.remove('arm');a.textContent='Elimina definitivament'}},4000);break}
@@ -781,6 +778,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-gestio.js?v=5"></script><script src="obrador-personal.js?v=3"></script><script src="obrador-economia.js?v=4"></script><script src="obrador-costos.js?v=6"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=6"></script><script src="obrador-personal.js?v=3"></script><script src="obrador-economia.js?v=4"></script><script src="obrador-costos.js?v=6"></script><script src="obrador-partides.js?v=1"></script><script src="obrador-docs.js?v=1"></script>
 </body>
 </html>

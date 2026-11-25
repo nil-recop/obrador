@@ -207,7 +207,7 @@ function controlHtml(id){
   if(!k.ps.length)return `<div class="empty"><b>Encara no hi ha partides en aquesta obra</b>Importa-les des de l'Excel de l'obra (codi, descripció, unitat, amidament, preu de venda i cost) o crea-les una a una. Amb elles tindràs aquí la producció, la desviació de cost i el marge final previst.${CANWRITE?`<div><button class="btn pri" data-act="import" data-obra="${esc(id)}">Importa des d'Excel</button> <button class="btn" data-act="new" data-mk="partides" data-def='${esc(JSON.stringify({obraId:id}))}'>+ Nova partida</button></div>`:''}</div>`;
   const pc=(a,b)=>b?(a/b*100).toFixed(1)+'%':'—';
   const caps={};
-  k.cs.forEach(x=>{const c=x.p.capitol||'Sense capítol';const g=caps[c]||(caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0});g.n++;g.venda+=x.c.venda;g.produit+=x.c.produit;g.cost+=+x.p.costReal||0;if(x.c.desv!=null)g.desv+=x.c.desv;g.eac+=x.c.eacF});
+  capsObra(id).forEach(c=>{if(k.ps.some(p=>p.capitol===c))caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0}});k.cs.forEach(x=>{const c=x.p.capitol||'Sense capítol';const g=caps[c]||(caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0});g.n++;g.venda+=x.c.venda;g.produit+=x.c.produit;g.cost+=+x.p.costReal||0;if(x.c.desv!=null)g.desv+=x.c.desv;g.eac+=x.c.eacF});
   const top=k.cs.filter(x=>x.c.desv!=null&&x.c.desv>0).sort((a,b)=>b.c.desv-a.c.desv).slice(0,6);
   const over=k.cs.filter(x=>x.c.pct>100).length;
   const sinImp=k.f.directe-k.costImp;
@@ -320,8 +320,8 @@ function pnum(s){
   else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
   const n=+s;return isFinite(n)?n:NaN;
 }
-const normU=x=>{const u=String(x||'').trim().toLowerCase();return UNITATS.find(k=>k.toLowerCase()===u)||({m2:'m²',m3:'m³',u:'ut',ud:'ut',uts:'ut'})[u]||'ut'};
-const normCap=x=>{const s=String(x||'').trim().toLowerCase();if(!s)return'';return CAPITOLS.find(c=>c.toLowerCase()===s)||CAPITOLS.find(c=>c.toLowerCase().startsWith(s)||s.startsWith(c.toLowerCase().split(' ')[0]))||''};
+const normU=(x,altra)=>{const u=String(x||'').trim().toLowerCase().replace(/\.$/,'');return UNITATS.find(k=>k.toLowerCase()===u)||({m2:'m²',m3:'m³',u:'ut',ud:'ut',uds:'ut',uts:'ut',un:'ut',pa:'PA','p.a':'PA'})[u]||altra||'ut'};
+const normCap=x=>String(x||'').trim();
 function impHelp(){
   const m=$('#imp-mode').value;
   $('#imp-help').innerHTML=m==='alta'
