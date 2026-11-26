@@ -1,8 +1,8 @@
 /* Comparatius de compres per partida (model «Comparatiu de compres»).
    Cada comparatiu: les partides de l'obra que es contracten, una columna per proveïdor amb preu i import,
-   PEM amb baixa (preu de venda de la partida) i cost objectiu (cost previst de la partida).
+   PEC + baixa (preu de venda de la partida) i cost objectiu (cost previst de la partida).
    Total del comparatiu = subtotal + ajudes / altres conceptes (no van al contracte). Millora = 1 − (total + financers) ÷ cost objectiu.
-   K adjudicat = PEM ÷ total adjudicat. K planificat = cost objectiu ÷ total adjudicat. Coeficient = PEM ÷ cost objectiu.
+   K adjudicat = PEC ÷ total adjudicat. K planificat = cost objectiu ÷ total adjudicat. Coeficient = PEC ÷ cost objectiu.
    Import adjudicat (el de la comanda) = subtotal del proveïdor, sense les ajudes. */
 const CP_ESTATS = ['En curs', 'Adjudicat', 'Anul·lat'];
 TONE['Anul·lat'] = 'bad';
@@ -52,7 +52,7 @@ function cpLlista(fo) {
   if (!fo && st.obra) rows = rows.filter((r) => r.obraId === st.obra);
   if (st.q) { const q = st.q.toLowerCase(); rows = rows.filter((r) => [r.num, r.nom, ...(r.prov || []).map((p) => p.nom), r.obraId ? obraTxt(r.obraId) : ''].some((v) => String(v || '').toLowerCase().includes(q))); }
   const tools = `<div class="tools"><input type="search" id="q-ofertes${fo ? 'o' : ''}" placeholder="Cerca comparatius o proveïdors…" value="${esc(st.q || '')}" data-bind="q" data-mk="ofertes" aria-label="Cerca">${fo ? '' : `<select id="fo-ofertes" data-bind="obra" data-mk="ofertes" aria-label="Filtra per obra"><option value="">Totes les obres</option>${obraOpts(st.obra)}</select>`}<span style="flex:1"></span>${CANWRITE ? `<button class="btn pri sm" data-act="new" data-mk="ofertes" data-def='${esc(JSON.stringify(fo ? { obraId: fo } : {}))}'>+ Nou comparatiu</button>` : ''}</div>`;
-  const intro = '<div class="small" style="margin-bottom:8px">Un comparatiu per activitat: tries les partides de l\'obra, adjuntes les ofertes dels proveïdors i compares preu a preu amb el PEM i el cost objectiu.</div>';
+  const intro = '<div class="small" style="margin-bottom:8px">Un comparatiu per activitat: tries les partides de l\'obra, adjuntes les ofertes dels proveïdors i compares preu a preu amb el PEC i el cost objectiu.</div>';
   if (!all.length) return intro + emptyHtml('Encara no hi ha cap comparatiu', 'Crea\'n un, tria les partides i adjunta les ofertes rebudes.', 'ofertes', fo ? { obraId: fo } : null).replace(`+ Nova ${M.ofertes.s}`, '+ Nou comparatiu');
   if (!rows.length) return intro + tools + '<div class="empty">Cap resultat amb aquests filtres.</div>';
   rows.sort((a, b) => String(b.num).localeCompare(String(a.num), 'ca', { numeric: true }));
@@ -115,7 +115,7 @@ function cpHtml() {
     <td style="min-width:180px">${l.pid ? `<span class="desc" title="${esc(l.desc || '')}">${esc(l.desc || '')}</span>` : cpIn(`data-cpl="desc" aria-label="Descripció"`, l.desc, 'txt')}</td>
     <td style="width:86px">${cpIn(`data-cpl="am" inputmode="decimal" aria-label="Amidament"`, typeof l.am === 'number' ? N3(l.am) : l.am)}</td><td style="width:54px">${cpIn(`data-cpl="ut" aria-label="Unitat"`, l.ut, 'txt')}</td>
     ${P.map((p, j) => `<td data-cc="${j}">${cpIn(`data-cpp="${j}" aria-label="Preu de ${esc(p.nom || 'proveïdor')}"`, (p.pr || {})[l.id])}<span class="l2" data-ci="${j}"></span></td>`).join('')}
-    <td>${cpIn(`data-cpl="pem" inputmode="decimal" aria-label="Preu PEM"`, typeof l.pem === 'number' ? fmtN(l.pem) : l.pem)}<span class="l2" data-cpem></span></td>
+    <td>${cpIn(`data-cpl="pem" inputmode="decimal" aria-label="Preu PEC"`, typeof l.pem === 'number' ? fmtN(l.pem) : l.pem)}<span class="l2" data-cpem></span></td>
     <td>${cpIn(`data-cpl="obj" inputmode="decimal" aria-label="Preu cost objectiu"`, typeof l.obj === 'number' ? fmtN(l.obj) : l.obj)}<span class="l2" data-cobj></span></td>
     <td style="width:30px">${dis ? '' : `<button class="btn sm" data-act="cpTreuL" data-i="${i}" aria-label="Treu la línia">×</button>`}</td></tr>`;
   const ajF = (a, i) => `<tr style="cursor:default" data-ca="${i}"><td></td><td>${cpIn(`data-cpa="desc" aria-label="Concepte"`, a.desc, 'txt')}</td><td>${cpIn(`data-cpa="am" inputmode="decimal" aria-label="Quantitat"`, typeof a.am === 'number' ? N3(a.am) : a.am)}</td><td>${cpIn(`data-cpa="ut" aria-label="Unitat"`, a.ut, 'txt')}</td>
@@ -144,7 +144,7 @@ function cpHtml() {
   <section class="panel" style="margin-bottom:14px"><h2>Ofertes rebudes<span class="sp"></span>${dis ? '' : `${ASSETS ? '<label class="btn sm" for="cpf-nous" style="color:inherit">Afegeix ofertes (documents)</label><input type="file" id="cpf-nous" data-cpfile="nous" accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.doc,.docx" multiple hidden>' : ''}<button class="btn sm" data-act="cpNouP">+ Proveïdor</button>`}</h2>
    <div class="pb">${P.length ? `<div class="small" style="margin-bottom:8px">Cada document que afegeixes crea un proveïdor i se'n llegeixen l'empresa, el NIF, el telèfon, el correu i el total. Els preus de cada partida s'entren a la taula (pots obrir l'oferta amb «Veure»).</div><div class="cpcards">${P.map(card).join('')}</div>` : '<div class="empty" style="padding:16px"><b>Encara no hi ha ofertes</b>Afegeix els documents de les ofertes: cada un crea un proveïdor.</div>'}</div></section>
   <section class="panel" style="margin-bottom:14px"><h2>Comparatiu<span class="sp"></span><span class="small">Preus en €/ut. Pots escriure «inclòs» o «no inclòs».</span></h2>
-  ${d.linies.length || d.ajudes.length ? `<div class="tw" style="border:0"><table class="cpt"><thead><tr><th>Codi</th><th>Descripció</th><th class="num">Amid.</th><th>Ut</th>${provTh}<th class="pv num">${+o.baixa ? 'PEM amb baixa' : 'PEM'}</th><th class="pv num">Cost objectiu</th><th></th></tr></thead><tbody>
+  ${d.linies.length || d.ajudes.length ? `<div class="tw" style="border:0"><table class="cpt"><thead><tr><th>Codi</th><th>Descripció</th><th class="num">Amid.</th><th>Ut</th>${provTh}<th class="pv num">${+o.baixa ? 'PEC + baixa' : 'PEC'}</th><th class="pv num">Cost objectiu</th><th></th></tr></thead><tbody>
    ${d.linies.map(fila).join('')}
    ${tot('sub', 'Subtotal (import del contracte)')}
    <tr class="sec"><td colspan="${7 + P.length}">Ajudes / altres conceptes (no es redacten en el contracte)</td></tr>
@@ -176,8 +176,8 @@ function cpPinta() {
   P.forEach((p, j) => { const el = document.querySelector(`[data-cpll="${j}"]`); if (el) { const dif = r2(p.llegit - c.p[p.id].sub); el.innerHTML = `Total llegit del document: <b>${fmtM(p.llegit)}</b>${c.p[p.id].sub && Math.abs(dif) > 0.5 ? ` <span style="color:var(--warn)">(la taula suma ${fmtM(c.p[p.id].sub)})</span>` : ''}`; } });
   const f = (l, v, s) => `<tr style="cursor:default"><td>${l}${s ? `<div class="small">${s}</div>` : ''}</td><td class="num">${v}</td></tr>`, nn = (x) => (x == null || !isFinite(x) ? '—' : fmtN(x));
   const com = d.comandaId && S.comandes.find((x) => x.id === d.comandaId);
-  $('#cp-res').innerHTML = `<div class="econ-g"><table><tbody>${f(+((obra(d.obraId) || {}).baixa) ? 'PEM amb baixa' : 'PEM', fmtM(c.pem), 'Preu de venda de les partides')}${f('Cost objectiu', fmtM(c.obj), 'Cost previst de les partides')}${f('Coeficient PEM / planificat', nn(c.coef))}</tbody></table>
-   <table><tbody>${c.adj ? f('Adjudicatari', esc(c.adj.nom || '')) + f('Import adjudicat', fmtM(c.impAdj), 'Subtotal del proveïdor: és l\'import de la comanda') + f('Total adjudicat amb ajudes', fmtM(c.totAdj)) + f('K adjudicat', nn(c.kAdj), 'PEM ÷ total adjudicat') + f('K planificat', nn(c.kPlan), 'Cost objectiu ÷ total adjudicat') : f('Adjudicatari', '<span class="muted">Encara no</span>', 'Marca «Adjudica» a la columna del proveïdor')}</tbody></table></div>
+  $('#cp-res').innerHTML = `<div class="econ-g"><table><tbody>${f(+((obra(d.obraId) || {}).baixa) ? 'PEC + baixa' : 'PEC', fmtM(c.pem), 'Preu de venda de les partides')}${f('Cost objectiu', fmtM(c.obj), 'Cost previst de les partides')}${f('Coeficient PEC / planificat', nn(c.coef))}</tbody></table>
+   <table><tbody>${c.adj ? f('Adjudicatari', esc(c.adj.nom || '')) + f('Import adjudicat', fmtM(c.impAdj), 'Subtotal del proveïdor: és l\'import de la comanda') + f('Total adjudicat amb ajudes', fmtM(c.totAdj)) + f('K adjudicat', nn(c.kAdj), 'PEC ÷ total adjudicat') + f('K planificat', nn(c.kPlan), 'Cost objectiu ÷ total adjudicat') : f('Adjudicatari', '<span class="muted">Encara no</span>', 'Marca «Adjudica» a la columna del proveïdor')}</tbody></table></div>
    ${c.adj && CANWRITE ? `<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">${com ? `<span class="small">Comanda ${esc(com.num)} · ${esc(com.estat || '')} · ${fmtM(com.import)}</span><button class="btn sm" data-act="edit" data-mk="comandes" data-id="${esc(com.id)}">Obre la comanda</button>` : '<button class="btn sm pri" data-act="cpComanda">Crea la comanda</button><span class="small">Es crea en esborrany a Compres, amb l\'import adjudicat.</span>'}</div>` : ''}
    ${c.mal ? `<div class="small" style="color:var(--bad);margin-top:6px">Hi ha ${c.mal} valors que no es poden calcular (en vermell).</div>` : ''}`;
   $('#cp-st').textContent = CP.brut ? 'Canvis sense desar' : 'Tot desat';
@@ -313,7 +313,7 @@ async function cpComanda() {
 }
 function cpDades() {
   const d = CP.d, c = cpCalc(d), o = obra(d.obraId) || {}, P = d.prov;
-  return { d, c, o, P, emp: cfgEmp(), pemL: +o.baixa ? 'PEM amb baixa' : 'PEM', nom: `Comparatiu ${o.codi || ''} ${d.nom || ''}`.replace(/[\\/:*?"<>|]/g, '').trim() };
+  return { d, c, o, P, emp: cfgEmp(), pemL: +o.baixa ? 'PEC + baixa' : 'PEC', nom: `Comparatiu ${o.codi || ''} ${d.nom || ''}`.replace(/[\\/:*?"<>|]/g, '').trim() };
 }
 async function cpPdf() {
   const x = cpDades(), { d, c, o, P } = x, J = await jsPdf(), gran = P.length > 4, doc = new J({ unit: 'mm', format: gran ? 'a3' : 'a4', orientation: 'landscape', compress: true });
@@ -336,7 +336,7 @@ async function cpPdf() {
   body.push(fil('TOTAL DEL COMPARATIU', (t, p) => (d.adj === p.id ? '[X] ' : '') + eur(t.total), eur(c.pem), eur(c.obj), { fontSize: 8.5 }));
   body.push(fil('FINANCERS', (t) => (t.fin ? eur(t.fin) : ''), c.adj ? 'K adjudicat ' + (c.kAdj == null ? '—' : fmtN(c.kAdj)) : '', c.adj ? 'K planificat ' + (c.kPlan == null ? '—' : fmtN(c.kPlan)) : ''));
   body.push(fil('TOTAL COMPARATIU - INCLÒS FINANCERS', (t) => eur(t.totFin), '', ''));
-  body.push(fil('MILLORA SEGONS PLANIFICAT', (t) => cpPct(t.millora), 'Coeficient PEM/planificat', c.coef == null ? '—' : fmtN(c.coef)));
+  body.push(fil('MILLORA SEGONS PLANIFICAT', (t) => cpPct(t.millora), 'Coeficient PEC/planificat', c.coef == null ? '—' : fmtN(c.coef)));
   body.push(fil('CONDICIONS DE PAGAMENT', (t, p) => pdfT([p.pagTipus, p.pagDies].filter(Boolean).join(' ')), '', ''));
   body.push(fil('RETENCIÓ DE GARANTIA', (t, p) => (p.ret ? pdfT(p.ret + '%') : ''), '', ''));
   body.push(fil('OBSERVACIONS', (t, p) => pdfT(p.obs || ''), '', '', { fontStyle: 'normal', halign: 'left', fontSize: 6.5 }));
@@ -381,7 +381,7 @@ async function cpXls() {
   A.push(['FINANCERS', '', '', '', ...P.flatMap((p) => ['', n(c.p[p.id].fin, E)]), 'K adjudicat', c.kAdj == null ? '' : n(c.kAdj, N2), 'K planificat', c.kPlan == null ? '' : n(c.kPlan, N2)]);
   const rTf = A.length + 1;
   A.push(['TOTAL COMPARATIU - INCLÒS FINANCERS', '', '', '', ...P.flatMap((p, j) => ['', n(c.p[p.id].totFin, E, `${col(c0 + 2 * j + 1)}${rTot}+${col(c0 + 2 * j + 1)}${rFin}`)])]);
-  A.push(['MILLORA SEGONS PLANIFICAT', '', '', '', ...P.flatMap((p, j) => ['', c.obj ? n(c.p[p.id].millora, PC, `1-${col(c0 + 2 * j + 1)}${rTf}/$${col(cObj + 1)}$${rTot}`) : '']), 'COEFICIENT PEM/PLANIFICAT', c.coef == null ? '' : n(c.coef, N2)]);
+  A.push(['MILLORA SEGONS PLANIFICAT', '', '', '', ...P.flatMap((p, j) => ['', c.obj ? n(c.p[p.id].millora, PC, `1-${col(c0 + 2 * j + 1)}${rTf}/$${col(cObj + 1)}$${rTot}`) : '']), 'COEFICIENT PEC/PLANIFICAT', c.coef == null ? '' : n(c.coef, N2)]);
   A.push([]);
   A.push(['CONDICIONS DE PAGAMENT', '', '', '', ...P.flatMap((p) => [p.pagTipus || '', p.pagDies || ''])]);
   A.push(['RETENCIÓ DE GARANTIA', '', '', '', ...P.flatMap((p) => [p.ret ? p.ret + '%' : '', ''])]);
