@@ -124,7 +124,7 @@ const eyeb=mk=>['obres','tasques','parts'].includes(mk)?'Obra':['partides','cert
 
 /* ---------- Càlculs ---------- */
 /* Cost real d'una partida: el que s'hi entra a mà més les factures que s'hi imputen */
-const imputatA=id=>sum(S.factures.filter(f=>f.sentit==='Rebuda'&&f.estat!=='Esborrany'),f=>sum((f.imputacions||[]).filter(i=>i.id===id),i=>+i.import));
+let imputatA=id=>sum(S.factures.filter(f=>f.sentit==='Rebuda'&&f.estat!=='Esborrany'),f=>sum((f.imputacions||[]).filter(i=>i.id===id),i=>+i.import));
 const costRealDe=p=>(+p.costReal||0)+(p.id?imputatA(p.id):0);
 function ptc(p){
   const am=+p.amidament||0,pv=+p.preuVenda||0,cu=+p.costUnit||0,ex=+p.executat||0,cr=costRealDe(p);

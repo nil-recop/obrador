@@ -189,7 +189,7 @@ const ObradorLectura = (() => {
 
   /* ---------- Partides d'un full d'Excel ---------- */
   const UT = /^(m|ml|m2|m²|m3|m³|ut|u|ud|uds|uts|un|h|hr|hores|kg|t|tn|pa|p\.a\.?|pa\.?|l|mes|dia|d|km|cm|jor|viatge|conj|cj|cjt|ha|%|mu|mil)\.?$/;
-  const CAPS = { codi: /^(codi|codigo|code|cod\.?|ref|referencia|item|posicio|partida)$/, nat: /^(nat\.?|naturalesa|naturaleza|tipus|tipo)$/, unitat: /^(u\.?|ut\.?|uts|ud\.?|uds\.?|um|u\.?m\.?|unitat|unitats|unidad|unidades|unit\.?)$/, desc: /(descripci|resum|concepte|concepto|denominaci|designaci)|^text/, am: /(amidament|medici|quantitat|cantidad|canpres|^cant\.?|^quant)/, cost: /cost/, pv: /(preu|precio|prpres|^pvp|^p\.?\s?u\.?)/, imp: /(import|imppres|^total)/, cap: /^cap[ií]tol|^capitulo|^capitol$/ };
+  const CAPS = { ind: /^(industrial|industrials|subcontractista|subcontrata|subcontratista|prove[iï]dor|proveedor|empresa)$/, codi: /^(codi|codigo|code|cod\.?|ref|referencia|item|posicio|partida)$/, nat: /^(nat\.?|naturalesa|naturaleza|tipus|tipo)$/, unitat: /^(u\.?|ut\.?|uts|ud\.?|uds\.?|um|u\.?m\.?|unitat|unitats|unidad|unidades|unit\.?)$/, desc: /(descripci|resum|concepte|concepto|denominaci|designaci)|^text/, am: /(amidament|medici|quantitat|cantidad|canpres|^cant\.?|^quant)/, cost: /cost/, pv: /(preu|precio|prpres|^pvp|^p\.?\s?u\.?)/, imp: /(import|imppres|^total)/, cap: /^cap[ií]tol|^capitulo|^capitol$/ };
   const txt = (v) => (v == null ? '' : String(v).replace(/\s+/g, ' ').trim());
   function nombre(v) {
     if (typeof v === 'number') return v;
@@ -262,7 +262,7 @@ const ObradorLectura = (() => {
       const cap = txt(g(r, 'cap')) || pila.map((x) => x.etq).join(' › ');
       if (cap && !caps.includes(cap)) caps.push(cap);
       import_ += isFinite(imp) ? imp : (am || 0) * (pv || 0);
-      out.push({ codi: codi || String(out.length + 1).padStart(3, '0'), descripcio: desc.slice(0, 600) || codi, unitat: ut, amidament: isFinite(am) ? am : 0, preuVenda: isFinite(pv) ? pv : 0, costUnit: isFinite(cost) ? cost : 0, capitol: cap, fila: q + 1 });
+      out.push({ codi: codi || String(out.length + 1).padStart(3, '0'), descripcio: desc.slice(0, 600) || codi, unitat: ut, amidament: isFinite(am) ? am : 0, preuVenda: isFinite(pv) ? pv : 0, costUnit: isFinite(cost) ? cost : 0, capitol: cap, industrial: txt(g(r, 'ind')), fila: q + 1 });
     });
     return { partides: out, capitols: caps, importFull: import_, sense: sense.n };
   }

@@ -81,7 +81,7 @@ async function capDesa(id) {
 }
 
 /* Importació d'un arxiu */
-const IMPC = [['codi', 'Codi'], ['desc', 'Descripció'], ['unitat', 'Unitat'], ['am', 'Amidament'], ['pv', 'Preu unitari'], ['cost', 'Cost unitari'], ['imp', 'Import'], ['cap', 'Capítol (columna)'], ['nat', 'Tipus de fila']];
+const IMPC = [['codi', 'Codi'], ['desc', 'Descripció'], ['unitat', 'Unitat'], ['am', 'Amidament'], ['pv', 'Preu unitari'], ['cost', 'Cost unitari'], ['imp', 'Import'], ['cap', 'Capítol (columna)'], ['nat', 'Tipus de fila'], ['ind', 'Industrial']];
 let IMP = null;
 const _openImp = openImport;
 openImport = function (oid, mk) {
@@ -123,6 +123,7 @@ function ixCalc() {
     const rec = { codi: p.codi, descripcio: p.descripcio, unitat: normU(p.unitat, p.unitat), amidament: p.amidament, preuVenda: Math.round(p.preuVenda * coef * 10000) / 10000, ordre: i };
     if (p.capitol) rec.capitol = p.capitol;
     if (IMP.m.cost != null) rec.costUnit = p.costUnit;
+    if (IMP.m.ind != null) rec.industrial = p.industrial;
     if (IMP.mk === 'modificats' && !old) Object.assign(rec, { estat: 'Proposat', data: today(), num: rec.codi, import: r2(rec.amidament * rec.preuVenda), cost: r2(rec.amidament * (rec.costUnit || 0)) });
     (old ? r.upd : r.crear).push({ old, rec: old ? rec : { capitol: '', costUnit: 0, ...rec } });
   });
