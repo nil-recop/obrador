@@ -38,6 +38,7 @@ posa('factures', 'r4', { num: 'R4', sentit: 'Rebuda', obraId: 'o2', tipusDespesa
 posa('factures', 'r5', { num: 'R5', sentit: 'Rebuda', obraId: 'o2', base: 7777, estat: 'Esborrany' });
 posa('factures', 'r6', { num: 'R6', sentit: 'Rebuda', obraId: 'o2', comandaId: 'c6', base: 900, estat: 'Pendent' });
 posa('factures', 'r7', { num: 'R7', sentit: 'Rebuda', obraId: 'o2', comandaId: 'c2', tipusCost: 'Indirecte', base: 100, estat: 'Pendent' });
+posa('oportunitats', 'op1', { nom: 'Licitació de prova', client: 'Ajuntament Prova', estat: 'En estudi', presentacio: '2026-12-15' });
 window.FILES = files; window.CRIDES = []; window.PUJATS = {}; window.ROL = 'edicio';
 const js = (d, s = 200) => new Response(JSON.stringify(d), { status: s });
 const tk = () => 'x.' + btoa(JSON.stringify({ sub: uid })) + '.y';
