@@ -265,7 +265,7 @@ const M={
   {k:'concepte',l:'Concepte',tp:'text',w:1,ph:'Certificació núm. 3 — octubre'},
   {k:'base',l:'Base imposable',tp:'money'},{k:'iva',l:'IVA',tp:'sel',o:['21%','10%','ISP (inversió del subjecte passiu)']},
   {k:'retencio',l:'Retenció de garantia (%)',tp:'pct'},
-  {k:'data',l:'Data factura',tp:'date'},{k:'venciment',l:'Venciment',tp:'date'}],
+  {k:'data',l:'Data factura',tp:'date'}],
   cols:['num','sentit','obraId','tercer','concepte',{l:'Total',num:1,f:o=>fmtM(totF(o).total)},]},
  parts:{t:'Parts de treball',s:'part',tit:'treballador',camps:[
   {k:'data',l:'Data',tp:'date',req:1},{k:'obraId',l:'Obra',tp:'obra',req:1},{k:'treballador',l:'Treballador / equip',tp:'text',req:1},
@@ -636,7 +636,7 @@ function openForm(mk,id,def){
   const base=r?{...r}:{...def};
   if(!r){m.camps.forEach(f=>{if(base[f.k]==null){if(f.tp==='sel')base[f.k]=f.o[0];if(f.tp==='date'&&['data','inici'].includes(f.k))base[f.k]=today()}});
     if(m.pref)base[m.camps[0].k]=nextCode(mk);
-    if(mk==='factures'){base.retencio=base.retencio??5;base.venciment=addDays(60)}
+    if(mk==='factures'){base.retencio=base.retencio??5}
     if(mk==='parts'){base.hores=8;base.preuHora=base.preuHora??24}}
   const body=`<form id="frm" data-mk="${mk}" data-id="${esc(id||'')}" class="fgrid" novalidate>${m.camps.map(f=>fieldHtml(f,base[f.k]??'')).join('')}</form>
    ${mk==='factures'?'<div class="calc" id="calc"></div>':''}
@@ -777,6 +777,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=9"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=10"></script><script src="obrador-partides.js?v=3"></script><script src="obrador-docs.js?v=4"></script><script src="obrador-indirectes.js?v=2"></script><script src="obrador-obra.js?v=1"></script><script src="obrador-certificacions.js?v=1"></script><script src="obrador-partsmes.js?v=1"></script><script src="obrador-proformes.js?v=1"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=10"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=10"></script><script src="obrador-partides.js?v=3"></script><script src="obrador-docs.js?v=4"></script><script src="obrador-indirectes.js?v=2"></script><script src="obrador-obra.js?v=1"></script><script src="obrador-certificacions.js?v=1"></script><script src="obrador-partsmes.js?v=1"></script><script src="obrador-proformes.js?v=1"></script><script src="obrador-imputacio.js?v=1"></script>
 </body>
 </html>

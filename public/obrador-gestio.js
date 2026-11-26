@@ -12,10 +12,10 @@ Object.assign(M,{
   {k:"capitol",l:"Capítol",tp:"sel",o:CAPITOLS,blank:1},{k:"descripcio",l:"Descripció",tp:"text",req:1,w:1},
   {k:"unitat",l:"Unitat",tp:"sel",o:UNITATS},{k:"amidament",l:"Amidament contractat",tp:"num"},
   {k:"preuVenda",l:"Preu de venda (€/ud)",tp:"money",d:2},{k:"costUnit",l:"Cost previst (€/ud)",tp:"money",d:2},
-  {k:"executat",l:"Executat acumulat (ud)",tp:"num"},{k:"costReal",l:"Cost real acumulat (€)",tp:"money"}],
+  {k:"executat",l:"Executat acumulat (ud)",tp:"num"},{k:"costReal",l:"Altres costos reals (€) — a més de les factures",tp:"money"}],
   cols:["codi","obraId","descripcio","unitat","amidament",{l:"Preu",num:1,f:o=>MF2.format(+o.preuVenda||0)},
    {l:"% exec.",f:o=>progHtml(ptc(o).pct)},{l:"Produït",num:1,f:o=>fmtM(ptc(o).produit)},
-   {l:"Cost real",num:1,f:o=>fmtM(o.costReal)},{l:"Desviació cost",num:1,f:o=>devHtml(ptc(o).desv)},
+   {l:"Cost real",num:1,f:o=>fmtM(costRealDe(o))},{l:"Desviació cost",num:1,f:o=>devHtml(ptc(o).desv)},
    {l:"Marge final prev.",num:1,f:o=>pctHtml(ptc(o).margeF)}]},
  certificacions:{t:"Certificacions",s:"certificació",tit:"num",sort:"num",camps:[
   {k:"obraId",l:"Obra",tp:"obra",req:1},{k:"num",l:"Núm. certificació",tp:"num",req:1},
@@ -28,7 +28,7 @@ Object.assign(M,{
   {k:"capitol",l:"Capítol",tp:"text",ph:"Tria'l o escriu-ne un de nou"},{k:"descripcio",l:"Descripció",tp:"text",req:1,w:1},
   {k:"estat",l:"Estat",tp:"sel",o:["Proposat","Presentat al client","Aprovat","Rebutjat","Executat"]},{k:"unitat",l:"Unitat",tp:"sel",o:UNITATS},
   {k:"amidament",l:"Amidament",tp:"num"},{k:"preuVenda",l:"Preu de venda (€/ud)",tp:"money",d:2},{k:"costUnit",l:"Cost previst (€/ud)",tp:"money",d:2},
-  {k:"executat",l:"Executat acumulat (ud)",tp:"num"},{k:"costReal",l:"Cost real acumulat (€)",tp:"money"},
+  {k:"executat",l:"Executat acumulat (ud)",tp:"num"},{k:"costReal",l:"Altres costos reals (€) — a més de les factures",tp:"money"},
   {k:"data",l:"Data",tp:"date"},{k:"dies",l:"Impacte en termini (dies)",tp:"num"},{k:"notes",l:"Notes",tp:"area",w:1}],
   cols:["codi","descripcio","unitat","amidament",{l:"Preu",num:1,f:o=>MF2.format(+o.preuVenda||0)},{l:"Import",num:1,f:o=>fmtM(o.import)},
    {l:"% exec.",f:o=>progHtml(ptc(o).pct)},{l:"Produït",num:1,f:o=>fmtM(ptc(o).produit)},{l:"Marge final prev.",num:1,f:o=>pctHtml(ptc(o).margeF)},"estat"]},
@@ -123,8 +123,11 @@ const pctHtml=v=>v==null?'<span class="muted">—</span>':`<span style="color:${
 const eyeb=mk=>['obres','tasques','parts'].includes(mk)?'Obra':['partides','certificacions','modificats'].includes(mk)?"Control d'obra":['estudis','ofertes'].includes(mk)?'Estudis':['qualitat','personal','tercers'].includes(mk)?'Empresa':'Gestió';
 
 /* ---------- Càlculs ---------- */
+/* Cost real d'una partida: el que s'hi entra a mà més les factures que s'hi imputen */
+const imputatA=id=>sum(S.factures.filter(f=>f.sentit==='Rebuda'&&f.estat!=='Esborrany'),f=>sum((f.imputacions||[]).filter(i=>i.id===id),i=>+i.import));
+const costRealDe=p=>(+p.costReal||0)+(p.id?imputatA(p.id):0);
 function ptc(p){
-  const am=+p.amidament||0,pv=+p.preuVenda||0,cu=+p.costUnit||0,ex=+p.executat||0,cr=+p.costReal||0;
+  const am=+p.amidament||0,pv=+p.preuVenda||0,cu=+p.costUnit||0,ex=+p.executat||0,cr=costRealDe(p);
   const venda=am*pv,costPrev=am*cu,produit=ex*pv,costGuanyat=ex*cu;
   const tracked=cr>0||ex===0;
   const eacF=tracked?cr+Math.max(0,am-ex)*cu:costPrev;
@@ -178,7 +181,7 @@ function ctlObra(id){
   const cs=ps.map(p=>({p,c:ptc(p)}));
   const venda=sum(cs,x=>x.c.venda),costPrev=sum(cs,x=>x.c.costPrev),produit=sum(cs,x=>x.c.produit);
   const tr=cs.filter(x=>x.c.desv!=null);
-  const costImp=sum(ps,p=>+p.costReal||0),costGuanyat=sum(tr,x=>x.c.costGuanyat),desv=sum(tr,x=>x.c.desv),eac=sum(cs,x=>x.c.eacF);
+  const costImp=sum(ps,p=>costRealDe(p)),costGuanyat=sum(tr,x=>x.c.costGuanyat),desv=sum(tr,x=>x.c.desv),eac=sum(cs,x=>x.c.eacF);
   const mods=S.modificats.filter(m=>m.obraId===id);
   const modAp=sum(mods.filter(m=>['Aprovat','Executat'].includes(m.estat)),m=>+m.import);
   const modPend=sum(mods.filter(m=>['Proposat','Presentat al client'].includes(m.estat)),m=>+m.import);
@@ -211,7 +214,7 @@ function controlHtml(id){
   if(!k.ps.length)return `<div class="empty"><b>Encara no hi ha partides en aquesta obra</b>Importa-les des de l'Excel de l'obra (codi, descripció, unitat, amidament, preu de venda i cost) o crea-les una a una. Amb elles tindràs aquí la producció, la desviació de cost i el marge final previst.${CANWRITE?`<div><button class="btn pri" data-act="import" data-obra="${esc(id)}">Importa des d'Excel</button> <button class="btn" data-act="new" data-mk="partides" data-def='${esc(JSON.stringify({obraId:id}))}'>+ Nova partida</button></div>`:''}</div>`;
   const pc=(a,b)=>b?fmtN(a/b*100)+'%':'—';
   const caps={};
-  capsObra(id).forEach(c=>{if(k.ps.some(p=>p.capitol===c))caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0}});k.cs.forEach(x=>{const c=x.p.capitol||'Sense capítol';const g=caps[c]||(caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0});g.n++;g.venda+=x.c.venda;g.produit+=x.c.produit;g.cost+=+x.p.costReal||0;if(x.c.desv!=null)g.desv+=x.c.desv;g.eac+=x.c.eacF});
+  capsObra(id).forEach(c=>{if(k.ps.some(p=>p.capitol===c))caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0}});k.cs.forEach(x=>{const c=x.p.capitol||'Sense capítol';const g=caps[c]||(caps[c]={n:0,venda:0,produit:0,cost:0,desv:0,eac:0});g.n++;g.venda+=x.c.venda;g.produit+=x.c.produit;g.cost+=costRealDe(x.p);if(x.c.desv!=null)g.desv+=x.c.desv;g.eac+=x.c.eacF});
   const top=k.cs.filter(x=>x.c.desv!=null&&x.c.desv>0).sort((a,b)=>b.c.desv-a.c.desv).slice(0,6);
   const over=k.cs.filter(x=>x.c.pct>100).length;
   const sinImp=k.f.directe-k.costImp;
@@ -225,7 +228,7 @@ function controlHtml(id){
    <section class="panel"><h2>Per capítols</h2><div class="tw"><table><thead><tr><th>Capítol</th><th class="num">Partides</th><th class="num">Venda</th><th class="num">Produït</th><th class="num">Cost real</th><th class="num">Desviació</th><th class="num">Cost final prev.</th><th class="num">Marge final</th></tr></thead><tbody>
    ${Object.entries(caps).map(([c,g])=>`<tr style="cursor:default"><td class="t-main">${esc(c)}</td><td class="num">${g.n}</td><td class="num">${fmtM(g.venda)}</td><td class="num">${fmtM(g.produit)} <span class="small">(${pc(g.produit,g.venda)})</span></td><td class="num">${fmtM(g.cost)}</td><td class="num">${devHtml(g.desv)}</td><td class="num">${fmtM(g.eac)}</td><td class="num">${pctHtml(g.venda?(g.venda-g.eac)/g.venda:null)}</td></tr>`).join('')}
    </tbody></table></div></section>
-   <section class="panel"><h2>Partides amb més desviació de cost</h2>${top.length?`<ul class="alist">${top.map(x=>`<li data-act="edit" data-mk="${x.p.esMod?'modificats':'partides'}" data-id="${esc(x.p.id)}"><span class="dot t-bad"></span><div class="tx">${esc(x.p.codi||'')} · ${esc(x.p.descripcio||'')}<small>Cost real ${fmtM(x.p.costReal)} · cost guanyat ${fmtM(x.c.costGuanyat)} · ${x.c.costGuanyat?fmtN(x.c.desv/x.c.costGuanyat*100)+'% per sobre':'sense base'}</small></div><b class="mono" style="color:var(--bad)">+${fmtM(x.c.desv)}</b></li>`).join('')}</ul>`:`<div class="empty">Cap partida per sobre del cost previst.</div>`}</section>
+   <section class="panel"><h2>Partides amb més desviació de cost</h2>${top.length?`<ul class="alist">${top.map(x=>`<li data-act="edit" data-mk="${x.p.esMod?'modificats':'partides'}" data-id="${esc(x.p.id)}"><span class="dot t-bad"></span><div class="tx">${esc(x.p.codi||'')} · ${esc(x.p.descripcio||'')}<small>Cost real ${fmtM(costRealDe(x.p))} · cost guanyat ${fmtM(x.c.costGuanyat)} · ${x.c.costGuanyat?fmtN(x.c.desv/x.c.costGuanyat*100)+'% per sobre':'sense base'}</small></div><b class="mono" style="color:var(--bad)">+${fmtM(x.c.desv)}</b></li>`).join('')}</ul>`:`<div class="empty">Cap partida per sobre del cost previst.</div>`}</section>
   </div><div class="stack">
    <section class="panel"><h2>Quadrament i riscos</h2><div class="pb"><dl class="meta">
     <dt>Cost directe real</dt><dd class="mono">${fmtM(k.f.directe)}</dd>
@@ -423,7 +426,7 @@ listHtml=function(mk,fo){
       let s;
       if(mk==='partides'){
         const cs=rows.map(r=>ptc(r));
-        s=`Venda ${fmtM(sum(cs,x=>x.venda))} · Produït ${fmtM(sum(cs,x=>x.produit))} · Cost real ${fmtM(sum(rows,r=>+r.costReal))} · Desviació de cost ${devHtml(sum(cs.filter(x=>x.desv!=null),x=>x.desv))}`;
+        s=`Venda ${fmtM(sum(cs,x=>x.venda))} · Produït ${fmtM(sum(cs,x=>x.produit))} · Cost real ${fmtM(sum(rows,r=>costRealDe(r)))} · Desviació de cost ${devHtml(sum(cs.filter(x=>x.desv!=null),x=>x.desv))}`;
       }else{
         s=`Aprovats ${fmtM(sum(rows.filter(r=>['Aprovat','Executat'].includes(r.estat)),r=>+r.import))} · Pendents de resposta ${fmtM(sum(rows.filter(r=>['Proposat','Presentat al client'].includes(r.estat)),r=>+r.import))}`;
       }
