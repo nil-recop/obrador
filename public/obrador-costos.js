@@ -192,7 +192,7 @@ function facForm(init) {
   const f = { obraId: e.obraId.value, comandaId: sel.value, tipusDespesa: e.tipusDespesa.value, tipusCost: e.tipusCost.value }, n = natFactura(f);
   const prov = e.tercer.value.trim(), igual = !c && prov && cs.find((x) => normC(x.proveidor) === normC(prov) && x.estat !== 'Tancada');
   box.innerHTML = `Compta com a <b>cost ${n.toLowerCase()}</b> ${f.tipusCost === n ? '(triat a mà)' : c ? `segons la comanda ${esc(c.num || '')}` : 'segons el tipus de despesa'}, per la base imposable.`
-    + (e.estat.value === 'Esborrany' ? ' <b>Mentre sigui un esborrany no compta.</b>' : '')
+    + (e.estat && e.estat.value === 'Esborrany' ? ' <b>Mentre sigui un esborrany no compta.</b>' : '')
     + (igual ? `<div style="color:var(--warn)">Aquest proveïdor té la comanda ${esc(igual.num || '')} en aquesta obra. Si la factura hi correspon, tria-la; si no, es comptaran totes dues.</div>` : '');
 }
 const _openF = openForm;

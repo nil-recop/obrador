@@ -228,7 +228,7 @@ async function lotDesa() {
     try {
       x.fitxerId = x.fitxerId || await pujaFitxer(x.f, d.obraId);
       if (d.classe === 'Factura') {
-        await save('factures', newId('fa'), { num: d.num || nextCode('factures'), sentit: 'Rebuda', obraId: d.obraId || '', tercer: d.nom, nif: d.nif || '', concepte: '', comandaId: d.comandaId || '', tipusDespesa: d.tipus, tipusCost: 'Automàtic', base, iva: d.iva, retencio: 0, estat: 'Pendent', data: d.data, venciment: '', fitxerId: x.fitxerId });
+        await save('factures', newId('fa'), { num: d.num || nextCode('factures'), sentit: 'Rebuda', obraId: d.obraId || '', tercer: d.nom, nif: d.nif || '', concepte: '', comandaId: d.comandaId || '', tipusDespesa: d.tipus, tipusCost: 'Automàtic', base, iva: d.iva, retencio: 0, data: d.data, venciment: '', fitxerId: x.fitxerId });
         x.desat = 'factura rebuda';
       } else {
         await save('comandes', newId('co'), { num: nextCode('comandes'), obraId: d.obraId || '', proveidor: d.nom, nif: d.nif || '', docNum: d.num || '', tipus: d.tipus, tipusCost: 'Automàtic', concepte: d.classe === 'Altres' ? '' : d.classe + (d.num ? ' ' + d.num : ''), import: base, estat: d.classe === 'Pressupost' ? 'Esborrany' : 'Rebuda', data: d.data, fitxerId: x.fitxerId });

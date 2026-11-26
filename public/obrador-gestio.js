@@ -193,7 +193,7 @@ function tresoreria(){
   const t=today(),d=new Date(),keys=[];
   for(let i=0;i<6;i++){const x=new Date(d.getFullYear(),d.getMonth()+i,1);keys.push(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'))}
   const B=[{l:'Vençuts',cob:0,pag:0},...keys.map(k=>({k,l:new Date(k+'-15T12:00:00').toLocaleDateString('ca-ES',{month:'long',year:'numeric'}),cob:0,pag:0})),{l:'Més endavant o sense data',cob:0,pag:0}];
-  S.factures.filter(f=>!['Esborrany','Cobrada','Pagada'].includes(f.estat)).forEach(f=>{
+  [].forEach(f=>{
     const a=totF(f).total;let b;
     if(!f.venciment)b=B[B.length-1];
     else if(f.venciment<t)b=B[0];
@@ -273,7 +273,7 @@ function gestioHtml(){
   <div class="grid2">
    <section class="panel"><h2>Tresoreria prevista</h2><div class="tw"><table><thead><tr><th>Període</th><th class="num">Cobraments</th><th class="num">Pagaments</th><th class="num">Net</th><th class="num">Saldo acumulat</th></tr></thead><tbody>
    ${B.map(b=>`<tr style="cursor:default"><td class="t-main" style="text-transform:capitalize">${esc(b.l)}</td><td class="num">${fmtM(b.cob)}</td><td class="num">${fmtM(b.pag)}</td><td class="num" style="color:${b.net<0?'var(--bad)':'var(--ok)'}">${fmtM(b.net)}</td><td class="num"><b>${fmtM(b.saldo)}</b></td></tr>`).join('')}
-   </tbody></table></div><div class="pb small">Factures rebudes pendents segons el venciment i certificacions facturades sense cobrar (sense IVA ni data prevista). No inclou nòmines, impostos ni quotes.</div></section>
+   </tbody></table></div><div class="pb small">Certificacions facturades sense cobrar (sense IVA ni data prevista). Les factures rebudes no porten estat de pagament. No inclou nòmines, impostos ni quotes.</div></section>
    <section class="panel"><h2>Contradictòries pendents de resposta<span class="sp"></span><span class="code">${fmtM(sum(mods,m=>+m.import))}</span></h2>
    ${mods.length?`<ul class="alist">${mods.slice(0,8).map(m=>`<li data-act="edit" data-mk="modificats" data-id="${esc(m.id)}"><span class="dot t-warn"></span><div class="tx">${esc(m.num||'')} · ${esc(m.descripcio||'')}<small>${esc(obraTxt(m.obraId))} · ${esc(m.estat)}</small></div><b class="mono">${fmtM(m.import)}</b></li>`).join('')}</ul>`:`<div class="empty">No hi ha contradictòries pendents.</div>`}</section>
   </div>`;
