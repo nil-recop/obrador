@@ -239,8 +239,8 @@ const M={
   {k:'tipus',l:'Tipologia',tp:'sel',o:['Obra nova residencial','Rehabilitació','Façanes','Industrial','Equipament públic','Obra civil']},
   {k:'estat',l:'Estat',tp:'sel',o:OBRA_ESTATS},{k:'cap',l:"Cap d'obra",tp:'text'},{k:'superficie',l:'Superfície (m²)',tp:'num'},
   {k:'inici',l:'Inici',tp:'date'},{k:'fi',l:'Fi prevista',tp:'date'},
-  {k:'pressupost',l:'Import contracte (PEC, sense IVA)',tp:'money'},{k:'avanc',l:"Avanç d'obra (%)",tp:'pct'}],
-  cols:['codi','nom','client','estat','avanc','pressupost',{l:'Cost real',num:1,f:o=>fmtM(fin(o.id).cost)}]},
+  {k:'pressupost',l:'Import contracte (PEC, sense IVA)',tp:'money'}],
+  cols:['codi','nom','client','estat',{l:'Avanç',f:o=>avancHtml(o.id)},'pressupost',{l:'Cost real',num:1,f:o=>fmtM(fin(o.id).cost)}]},
  tasques:{t:'Planificació',s:'tasca',tit:'titol',kanban:1,camps:[
   {k:'titol',l:'Tasca',tp:'text',req:1,w:1},{k:'obraId',l:'Obra',tp:'obra'},{k:'fase',l:'Fase',tp:'sel',o:FASES},
   {k:'estat',l:'Estat',tp:'sel',o:['Pendent','En curs','Bloquejada','Feta']},{k:'prioritat',l:'Prioritat',tp:'sel',o:['Normal','Alta','Baixa ']},
@@ -402,6 +402,9 @@ function bannerHtml(){
   else if(STALE)h+=`<div class="banner"><p>Encara no s'ha pogut connectar amb la base de dades. Les dades poden no estar actualitzades.</p></div>`;
   return h;
 }
+/* Avanç d'obra = produït a origen / total aprovat (partides + contradictòries aprovades), a preu de venda */
+const avancObra=id=>{const k=ctlObra(id);return k.venda?k.produit/k.venda*100:null};
+const avancHtml=id=>{const a=avancObra(id);return a==null?'<span class="muted">—</span>':progHtml(a)};
 const isVencuda=f=>false; // les factures ja no porten estat de pagament
 function viewHtml(r){
   if(!LOCAL&&!COLS.every(c=>loaded[c]))return `<div class="loading">Carregant dades de l'empresa…</div>`;
@@ -416,7 +419,7 @@ function dashHtml(){
   const t=today();
   const actives=S.obres.filter(o=>['En execució','Preparació','Aturada','Recepció provisional'].includes(o.estat));
   const exec=S.obres.filter(o=>o.estat==='En execució');
-  const cartera=sum(actives,o=>econ(o.id).vigent*(1-(+o.avanc||0)/100));
+  const cartera=sum(actives,o=>econ(o.id).vigent*(1-(avancObra(o.id)||0)/100));
   const pend=S.certificacions.filter(c=>c.estat==='Facturada');
   const opp=S.oportunitats.filter(o=>['Detectada','En estudi','Ofertada'].includes(o.estat));
   const pond=sum(opp,o=>(+o.import||0)*(+o.probabilitat||0)/100);
@@ -435,7 +438,7 @@ function dashHtml(){
   <div class="head"><div><div class="eyebrow">${esc(dt)}</div><h1>Tauler de l'empresa</h1></div></div>
   <div class="kpis">
     <div class="kpi"><div class="l">Obres en execució</div><div class="v">${exec.length}</div><div class="s">${actives.length} obres actives en total</div></div>
-    <div class="kpi"><div class="l">Cartera pendent d'executar</div><div class="v">${fmtM(cartera)}</div><div class="s">Contracte × (100% − avanç)</div></div>
+    <div class="kpi"><div class="l">Cartera pendent d'executar</div><div class="v">${fmtM(cartera)}</div><div class="s">Contracte vigent × (100% − avanç)</div></div>
     <div class="kpi"><div class="l">Pendent de cobrament</div><div class="v">${fmtM(sum(pend,c=>certPer(c)))}</div><div class="s">Certificacions facturades i no cobrades, sense IVA</div></div>
     <div class="kpi"><div class="l">Licitacions en curs</div><div class="v">${fmtM(pond)}</div><div class="s">Ponderat per probabilitat · ${opp.length} obertes</div></div>
   </div>
@@ -445,7 +448,7 @@ function dashHtml(){
       ${actives.length?`<div class="tw"><table><thead><tr><th>Obra</th><th>Estat</th><th>Avanç</th><th class="num">Contracte</th><th class="num">Certificat</th><th>Cost / certificat</th><th class="num">Marge net</th></tr></thead><tbody>
       ${actives.sort((a,b)=>String(a.codi).localeCompare(String(b.codi))).map(o=>{const f=fin(o.id),ec=econ(o.id);const ratio=f.certificat?f.cost/f.certificat:0;
         return `<tr data-act="goObra" data-id="${esc(o.id)}"><td class="t-main"><div class="code">${esc(o.codi)}</div>${esc(o.nom)}</td><td>${pill(o.estat)}</td>
-        <td>${progHtml(+o.avanc||0)}</td><td class="num">${fmtM(ec.vigent)}</td><td class="num">${fmtM(f.certificat)}</td>
+        <td>${avancHtml(o.id)}</td><td class="num">${fmtM(ec.vigent)}</td><td class="num">${fmtM(f.certificat)}</td>
         <td><div class="bar c ${ratio>1?'over':''}" title="${Math.round(ratio*100)}%"><i style="width:${Math.min(100,ratio*100)}%"></i></div></td>
         <td class="num" style="color:${ec.netPct==null?'var(--muted)':ec.netPct<0?'var(--bad)':'var(--ok)'}">${p1(ec.netPct)}</td></tr>`}).join('')}
       </tbody></table></div>`:emptyHtml('Cap obra activa','Dona d\'alta la primera obra per començar a planificar, documentar i facturar.','obres')}
@@ -551,7 +554,7 @@ function obraHtml(id){
   <div class="head"><div><h1>${esc(o.nom)}</h1><div class="muted" style="margin-top:4px">${esc(o.client||'')}${o.ubicacio?' · '+esc(o.ubicacio):''}</div></div>${pill(o.estat)}<span class="sp"></span>
   ${CANWRITE?`<button class="btn" data-act="edit" data-mk="obres" data-id="${esc(id)}">Edita l'obra</button>`:''}</div>
   <div class="kpis">
-    <div class="kpi"><div class="l">Contracte</div><div class="v">${fmtM(ec.vigent)}</div><div class="s">${ec.lic?'Baixa '+pn(o.baixa)+' · ':''}${ec.modAp?'contradictòries '+fmtM(ec.modAp)+' · ':''}avanç ${+o.avanc||0}%</div></div>
+    <div class="kpi"><div class="l">Contracte</div><div class="v">${fmtM(ec.vigent)}</div><div class="s">${ec.lic?'Baixa '+pn(o.baixa)+' · ':''}${ec.modAp?'contradictòries '+fmtM(ec.modAp)+' · ':''}avanç ${avancObra(id)==null?'—':fmtN(avancObra(id))+'%'}</div></div>
     <div class="kpi"><div class="l">Certificat</div><div class="v">${fmtM(f.certificat)}</div><div class="s">${ec.vigent?fmtN(f.certificat/ec.vigent*100)+'% del contracte':'—'} · facturat ${fmtM(f.facturat)} · cobrat ${fmtM(f.cobrat)}</div></div>
     <div class="kpi"><div class="l">Cost real</div><div class="v">${fmtM(f.cost)}</div><div class="s">Directe ${fmtM(f.directe)} · indirecte ${fmtM(f.indirecte)}</div></div>
     <div class="kpi"><div class="l">Marge net sobre certificat</div><div class="v" style="color:${ec.netPct==null?'inherit':ec.netPct<0?'var(--bad)':'var(--ok)'}">${p1(ec.netPct)}</div><div class="s">${fmtM(ec.net)} · brut ${p1(ec.brutPct)} · estructura ${pn(ec.pct)}</div></div>
