@@ -112,7 +112,7 @@ function ixFull(k) {
 }
 function ixCalc() {
   const oid = $('#ix-obra').value, f = IMP.fulls[IMP.k], coef = +$('#ix-coef').value || 0;
-  const r = ObradorLectura.partides(f.rows, IMP.m, IMP.ini), ex = S[IMP.mk].filter((p) => p.obraId === oid), usats = new Set(), conta = {};
+  const r = ObradorLectura.partides(f.rows, IMP.m, IMP.ini), ex = IMP.ex || S[IMP.mk].filter((p) => p.obraId === oid), usats = new Set(), conta = {};
   r.partides.forEach((p) => { conta[p.codi] = (conta[p.codi] || 0) + 1; });
   r.crear = []; r.upd = [];
   r.partides.forEach((p, i) => {
