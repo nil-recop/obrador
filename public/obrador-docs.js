@@ -179,7 +179,7 @@ function lotCard(x) {
   ${inp('base', 'Base imposable *', 'number', 'step="0.01"')}${inp('data', 'Data de la compra *', 'date')}
   ${inp('num', 'Núm. del document', 'text')}${sel('tipus', 'Tipus', op(M.comandes.camps.find((f) => f.k === 'tipus').o, x.d.tipus))}
   ${x.d.classe === 'Factura' ? sel('iva', 'IVA', op(M.factures.camps.find((f) => f.k === 'iva').o, x.d.iva)) + sel('comandaId', 'Comanda', '<option value="">— Sense comanda —</option>' + cs.map((c) => `<option value="${esc(c.id)}" ${c.id === x.d.comandaId ? 'selected' : ''}>${esc([c.num, c.proveidor, fmtM(c.import)].join(' · '))}</option>`).join('')) : ''}
-  </div><div class="small">Es desarà com a ${x.d.classe === 'Factura' ? 'factura rebuda (Proformes)' : x.d.classe === 'Pressupost' ? 'compra en esborrany, que no compta com a cost (Compres)' : 'compra rebuda (Compres)'}.</div>`;
+  </div><div class="small">Es desarà com a ${x.d.classe === 'Factura' ? 'factura rebuda (Factures)' : x.d.classe === 'Pressupost' ? 'compra en esborrany, que no compta com a cost (Compres)' : 'compra rebuda (Compres)'}.</div>`;
 }
 function lotPinta(x) {
   if (!$('#lot-l')) return;
@@ -260,12 +260,12 @@ document.addEventListener('dragover', (e) => { const z = e.target.closest && e.t
 document.addEventListener('dragleave', (e) => { const z = e.target.closest && e.target.closest('[data-dropl]'); if (z) z.classList.remove('over'); });
 document.addEventListener('drop', (e) => { const z = e.target.closest && e.target.closest('[data-dropl]'); if (z) { e.preventDefault(); z.classList.remove('over'); lotAfegeix(e.dataTransfer.files); } });
 
-/* Botó i explicació a Compres i Facturació */
+/* Botó i explicació a Compres i Factures */
 const _listD = listHtml;
 listHtml = function (mk, fo) {
   const h = _listD(mk, fo);
   if (mk !== 'comandes' && mk !== 'factures') return h;
-  const ex = mk === 'comandes' ? 'Compres: el que encarregues als proveïdors i subcontractistes (comandes i albarans).' : 'Proformes: de moment, les factures rebudes dels proveïdors. Les del client són les certificacions.';
+  const ex = mk === 'comandes' ? 'Compres: el que encarregues als proveïdors i subcontractistes (comandes i albarans).' : 'Factures: les rebudes dels proveïdors. Les del client són les certificacions; les proformes que envieu, a Proformes.';
   return `<div class="small" style="margin-bottom:8px">${ex}</div>` + (CANWRITE && ASSETS ? h.replace('<span style="flex:1"></span>', `<span style="flex:1"></span><button class="btn sm" data-act="lot" data-o="${esc(fo || '')}">Puja documents de compra</button>`) : h);
 };
 

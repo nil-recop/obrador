@@ -259,7 +259,7 @@ const M={
   {k:'concepte',l:'Concepte',tp:'text',w:1},{k:'import',l:'Import (sense IVA)',tp:'money'},
   {k:'estat',l:'Estat',tp:'sel',o:['Esborrany','Sol·licitada','Aprovada','Rebuda','Cancel·lada']},{k:'data',l:'Data',tp:'date'}],
   cols:['num','obraId','proveidor','tipus','concepte','import','estat']},
- factures:{t:'Proformes',s:'factura',pref:'FR',tit:'concepte',camps:[
+ factures:{t:'Factures',s:'factura',pref:'FR',tit:'concepte',camps:[
   {k:'num',l:'Núm. factura',tp:'code',req:1},{k:'sentit',l:'Tipus',tp:'sel',o:['Rebuda']},
   {k:'obraId',l:'Obra',tp:'obra'},{k:'tercer',l:'Client / proveïdor',tp:'text'},
   {k:'concepte',l:'Concepte',tp:'text',w:1,ph:'Certificació núm. 3 — octubre'},
@@ -283,9 +283,9 @@ const M={
 const COLS=['obres','tasques','fitxers','oportunitats','comandes','factures','parts','actius'];
 const NAV=[
  {g:null,items:[['tauler','Tauler','M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z']]},
- {g:'Obra',items:[['obres','Obres','M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6'],['tasques','Planificació','M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'],['parts','Parts de treball','M12 8v4l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z']]},
+ {g:'Obra',items:[['obres','Obres','M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6'],['parts','Parts de treball','M12 8v4l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z']]},
  {g:'Documents',items:[['documents','Documents','M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z']]},
- {g:'Gestió',items:[['oportunitats','Licitacions','M9 12l2 2 4-4M5 4h14v16H5z'],['comandes','Compres','M6 6h15l-2 9H7L5 3H2M9 20h.01M18 20h.01'],['factures','Proformes','M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4'],['actius','Maquinària','M3 17h4l3-6h5l2 3h4v3H3zM7 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0M10 11V6h4']]}
+ {g:'Gestió',items:[['oportunitats','Licitacions','M9 12l2 2 4-4M5 4h14v16H5z'],['comandes','Compres','M6 6h15l-2 9H7L5 3H2M9 20h.01M18 20h.01'],['factures','Factures','M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4'],['actius','Maquinària','M3 17h4l3-6h5l2 3h4v3H3zM7 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0M10 11V6h4']]}
 ];
 
 /* ---------- State ---------- */
@@ -423,8 +423,8 @@ function dashHtml(){
   const hasEx=COLS.some(c=>S[c].some(x=>x.exemple));
   const att=[];
   S.factures.filter(isVencuda).forEach(f=>att.push({tone:'bad',tx:`Factura ${f.sentit==='Emesa'?'emesa':'rebuda'} vençuda · ${f.num||''}`,sub:`${f.tercer||''} · ${fmtM(totF(f).total)} · venç. ${fmtD(f.venciment)}`,mk:'factures',id:f.id}));
-  S.tasques.filter(x=>x.estat==='Bloquejada').forEach(x=>att.push({tone:'bad',tx:`Tasca bloquejada: ${x.titol}`,sub:obraTxt(x.obraId),mk:'tasques',id:x.id}));
-  S.tasques.filter(x=>x.estat!=='Feta'&&x.estat!=='Bloquejada'&&x.limit&&x.limit<t).forEach(x=>att.push({tone:'warn',tx:`Tasca fora de termini: ${x.titol}`,sub:`${obraTxt(x.obraId)} · límit ${fmtD(x.limit)}`,mk:'tasques',id:x.id}));
+  if(0)S.tasques.filter(x=>x.estat==='Bloquejada').forEach(x=>att.push({tone:'bad',tx:`Tasca bloquejada: ${x.titol}`,sub:obraTxt(x.obraId),mk:'tasques',id:x.id}));
+  if(0)S.tasques.filter(x=>x.estat!=='Feta'&&x.estat!=='Bloquejada'&&x.limit&&x.limit<t).forEach(x=>att.push({tone:'warn',tx:`Tasca fora de termini: ${x.titol}`,sub:`${obraTxt(x.obraId)} · límit ${fmtD(x.limit)}`,mk:'tasques',id:x.id}));
   S.comandes.filter(c=>c.estat==='Sol·licitada').forEach(c=>att.push({tone:'info',tx:`Comanda per aprovar · ${c.num}`,sub:`${c.proveidor||''} · ${fmtM(c.import)}`,mk:'comandes',id:c.id}));
   S.actius.filter(a=>a.revisio&&a.revisio<=addDays(30)&&a.estat!=='Baixa').forEach(a=>att.push({tone:a.revisio<t?'bad':'warn',tx:`Revisió de ${a.nom}`,sub:`${a.codi||''} · ${fmtD(a.revisio)}`,mk:'actius',id:a.id}));
 
@@ -531,14 +531,14 @@ const obraOpts=(sel,none)=>(none?`<option value="">${esc(none)}</option>`:'')+S.
 /* ---------- Obra detail ---------- */
 function obraHtml(id){
   const o=obra(id);if(!o)return `<div class="empty"><b>No s'ha trobat aquesta obra</b>Potser s'ha eliminat. <div><a class="btn" href="#obres">Torna a Obres</a></div></div>`;
-  const f=fin(id),ec=econ(id);const tabs=[['resum','Resum'],['control','Control'],['partides','Partides'],['modificats','Contradictòries'],['produccio','Producció'],['certificacions','Certificacions'],['tasques','Planificació'],['ofertes','Comparatius'],['comandes','Compres'],['factures','Proformes'],['parts','Parts'],['indirectes','Indirectes'],['qualitat','Qualitat i PRL'],['docs','Documents']];
+  const f=fin(id),ec=econ(id);const tabs=[['resum','Resum'],['control','Control'],['partides','Partides'],['modificats','Contradictòries'],['produccio','Producció'],['certificacions','Certificacions'],['ofertes','Comparatius'],['comandes','Compres'],['factures','Factures'],['proformes','Proformes'],['parts','Parts'],['indirectes','Indirectes'],['qualitat','Qualitat i PRL'],['docs','Documents']];
   const tb=V.obraTab;
   let body='';
   if(tb==='resum'){
     const ts=S.tasques.filter(t=>t.obraId===id);
     const byF=FASES.map(fs=>{const a=ts.filter(t=>t.fase===fs);return{fs,n:a.length,d:a.filter(t=>t.estat==='Feta').length,b:a.some(t=>t.estat==='Bloquejada')}}).filter(x=>x.n);
     const nd=S.fitxers.filter(x=>x.owner===id&&!x.paperera).length;
-    body=econPanel(id)+`<div class="grid2"><section class="panel"><h2>Avanç per fases</h2><div class="pb">${byF.length?`<table><tbody>${byF.map(x=>`<tr style="cursor:default"><td style="width:40%">${esc(x.fs)} ${x.b?pill('Bloquejada'):''}</td><td>${progHtml(x.d/x.n*100)}</td><td class="num code">${x.d}/${x.n}</td></tr>`).join('')}</tbody></table>`:`<div class="muted">Encara no hi ha tasques planificades.</div>`}</div></section>
+    body=econPanel(id)+`<div class="grid2"><section class="panel" hidden><h2>Avanç per fases</h2><div class="pb">${byF.length?`<table><tbody>${byF.map(x=>`<tr style="cursor:default"><td style="width:40%">${esc(x.fs)} ${x.b?pill('Bloquejada'):''}</td><td>${progHtml(x.d/x.n*100)}</td><td class="num code">${x.d}/${x.n}</td></tr>`).join('')}</tbody></table>`:`<div class="muted">Encara no hi ha tasques planificades.</div>`}</div></section>
     <section class="panel"><h2>Fitxa</h2><div class="pb"><dl class="meta">
       <dt>Client</dt><dd>${esc(o.client||'—')}</dd><dt>Ubicació</dt><dd>${esc(o.ubicacio||'—')}</dd><dt>Tipologia</dt><dd>${esc(o.tipus||'—')}</dd>
       <dt>Cap d'obra</dt><dd>${esc(o.cap||'—')}</dd><dt>Superfície</dt><dd class="mono">${o.superficie?fmtN(o.superficie)+' m²':'—'}</dd>
@@ -777,6 +777,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=8"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=8"></script><script src="obrador-partides.js?v=3"></script><script src="obrador-docs.js?v=2"></script><script src="obrador-indirectes.js?v=2"></script><script src="obrador-obra.js?v=1"></script><script src="obrador-certificacions.js?v=1"></script><script src="obrador-partsmes.js?v=1"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=1"></script><script src="obrador-gestio.js?v=8"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=9"></script><script src="obrador-partides.js?v=3"></script><script src="obrador-docs.js?v=3"></script><script src="obrador-indirectes.js?v=2"></script><script src="obrador-obra.js?v=1"></script><script src="obrador-certificacions.js?v=1"></script><script src="obrador-partsmes.js?v=1"></script><script src="obrador-proformes.js?v=1"></script>
 </body>
 </html>

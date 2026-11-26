@@ -26,10 +26,16 @@ const facCost = (f) => f.sentit === 'Rebuda' && f.estat !== 'Esborrany';
 const natAuto = (f) => { const c = comandaDe(f); return c ? natCompra(c) : tipusCompra(f.tipusDespesa || 'Material'); };
 const natFactura = (f) => (['Directe', 'Indirecte'].includes(f.tipusCost) ? f.tipusCost : natAuto(f));
 const facturatCom = (c) => sum(S.factures.filter((f) => facCost(f) && comandaDe(f) === c), (f) => +f.base);
+/* Proformes enviades i encara sense factura: provisió. La seva comanda compta només pel que no cobreixen. */
+const pfPendent = (p) => p.estat === 'Enviada' && !S.factures.some((f) => f.proformaId === p.id && facCost(f));
+const pfBase = (p) => r2(sum(p.linies || [], (l) => r2((+l.q || 0) * (+l.preu || 0))));
+const natProf = (p) => { const c = S.comandes.find((x) => x.id === p.comandaId && x.obraId === p.obraId); return ['Directe', 'Indirecte'].includes(p.tipusCost) ? p.tipusCost : c ? natCompra(c) : tipusCompra(p.tipusDespesa || 'Material'); };
 function liniesCompra(oid) {
   const l = S.factures.filter((f) => f.obraId === oid && facCost(f)).map((f) => ({ fac: 1, nat: natFactura(f), import: +f.base || 0 }));
+  const pfs = (S.proformes || []).filter((p) => p.obraId === oid && pfPendent(p));
+  pfs.forEach((p) => l.push({ pf: 1, nat: natProf(p), import: pfBase(p) }));
   S.comandes.filter((c) => c.obraId === oid && !['Esborrany', 'Cancel·lada'].includes(c.estat)).forEach((c) => {
-    const fac = facturatCom(c), r = fac && c.estat === 'Tancada' ? 0 : fac ? Math.max(0, (+c.import || 0) - fac) : +c.import || 0;
+    const fac = facturatCom(c), pp = sum(pfs.filter((p) => p.comandaId === c.id), pfBase), r = fac && c.estat === 'Tancada' ? 0 : Math.max(0, (+c.import || 0) - fac - pp);
     if (r) l.push({ nat: natCompra(c), import: r });
   });
   return l;
