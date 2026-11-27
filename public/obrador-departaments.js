@@ -95,6 +95,45 @@ function bancHtml() {
 }
 document.addEventListener('input', (e) => { const k = e.target.dataset && e.target.dataset.banc; if (k) { BANC[k] = e.target.value; schedule(); } });
 
+/* ---------- Estudis de costos: preus suggerits pel banc d'ofertes ---------- */
+const BN_BUIDES = new Set(['amb', 'sense', 'per', 'para', 'con', 'sin', 'del', 'dels', 'les', 'los', 'las', 'una', 'uns', 'unes', 'que', 'mitjans', 'inclos', 'inclou', 'segons', 'tipus', 'tipo', 'sobre', 'fins', 'hasta', 'altura', 'formada', 'format', 'mida', 'col·locat', 'colocado']);
+const bnParaules = (s) => [...new Set(String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9·]+/).filter((w) => w.length >= 4 && !BN_BUIDES.has(w) && !/^\d+$/.test(w)).map((w) => w.slice(0, 6)))];
+const BN_NAT = [['mat', 'MAT', 'nomMat'], ['llog', 'LLOG', 'nomLlog'], ['ind', 'IND', 'nomInd'], ['sd', 'Sense detall', '']];
+const bnNatDe = (t) => (t === 'Material' ? 'mat' : t === 'Lloguer de maquinària' ? 'llog' : 'ind');
+let BNQ = null; // text de cerca del detall obert
+function bnSuggeriments(p, q) {
+  const ws = bnParaules(q), ut = String(p.ut || '').toLowerCase();
+  if (!ws.length) return [];
+  return bancLinies().map((x) => { const xs = bnParaules(x.desc + ' ' + x.activitat), n = ws.filter((w) => xs.includes(w)).length; return { x, n: n + (n && String(x.ut || '').toLowerCase() === ut ? 0.5 : 0) }; })
+    .filter((s) => s.n >= Math.min(2, ws.length)).sort((a, b) => b.n - a.n || b.x.any.localeCompare(a.x.any) || a.x.preu - b.x.preu).slice(0, 15).map((s) => s.x);
+}
+function bnLlista() {
+  const el = $('#bn-l'); if (!el || ESD == null || !ED) return;
+  const p = ED.d.partides[ESD], ls = bnSuggeriments(p, BNQ);
+  el.innerHTML = ls.length ? `<div class="tw"><table><thead><tr><th>Any</th><th>Oferta</th><th class="num">Preu</th><th>Posa'l a</th></tr></thead><tbody>${ls.map((x, i) => `<tr style="cursor:default"><td class="mono">${esc(x.any || '—')}</td><td style="font-size:12.5px">${esc(String(x.desc).slice(0, 120))}<span class="l2">${esc(x.prov)} · ${esc(x.origen)}${x.adj ? ' · adjudicat' : ''}</span></td><td class="num">${fmtM(x.preu)}<span class="l2">€/${esc(x.ut || 'ut')}</span></td><td style="white-space:nowrap">${CANWRITE ? `<select data-bnnat="${i}" aria-label="Natura del cost">${BN_NAT.map(([k, l]) => `<option value="${k}" ${k === bnNatDe(x.tipus) ? 'selected' : ''}>${l}</option>`).join('')}</select> <button class="btn sm" type="button" data-act="bnUsa" data-i="${i}">Fes-lo servir</button>` : ''}</td></tr>`).join('')}</tbody></table></div><div class="small">Mira l'any i la unitat abans de fer-lo servir.</div>`
+    : '<div class="small">Cap oferta del banc s\'assembla a aquesta partida. Prova amb altres paraules.</div>';
+  el._ls = ls;
+}
+const _estDetBn = estDet;
+estDet = function (i) {
+  if (ESD !== i) BNQ = null;
+  _estDetBn(i);
+  const p = ED.d.partides[i], b = $('#drawerHost .body'); if (!b) return;
+  if (BNQ == null) BNQ = p.desc || '';
+  b.insertAdjacentHTML('beforeend', `<div><b>Preus del banc d'ofertes</b><div class="small" style="margin:2px 0 6px">Ofertes semblants, de comparatius d'obra i ofertes sense obra.</div><input type="search" id="bn-q" value="${esc(BNQ)}" placeholder="Paraules de la partida…" aria-label="Cerca al banc d'ofertes" style="width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;padding:7px 10px;font:inherit;box-sizing:border-box"><div id="bn-l" style="margin-top:6px"></div></div>`);
+  bnLlista();
+};
+document.addEventListener('input', (e) => { if (e.target.id === 'bn-q') { BNQ = e.target.value; bnLlista(); } });
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-act="bnUsa"]'); if (!a || ESD == null || !ED) return;
+  const x = ($('#bn-l')._ls || [])[+a.dataset.i]; if (!x) return;
+  const k = document.querySelector(`[data-bnnat="${a.dataset.i}"]`).value, nat = BN_NAT.find((n) => n[0] === k), p = ED.d.partides[ESD];
+  p[k] = Math.round(x.preu * 10000) / 10000;
+  if (nat[2] && !String(p[nat[2]] || '').trim()) p[nat[2]] = x.prov;
+  ED.brut = true; const sc = $('#drawerHost .body').scrollTop; paint(); estDet(ESD); $('#drawerHost .body').scrollTop = sc;
+  toast(`${nat[1]}: ${fmtN(x.preu)} €/ut de ${x.prov} (${x.any}).`);
+});
+
 /* Editor d'una oferta sense obra */
 let BO = null;
 const boNova = () => ({ data: today(), activitat: '', tipus: M.comandes.camps.find((f) => f.k === 'tipus').o[0], oportunitatId: '', proveidor: '', nif: '', contacte: '', tel: '', email: '', notes: '', docs: [], linies: [{ id: newId('bl'), codi: '', desc: '', ut: 'ut', preu: '' }] });
