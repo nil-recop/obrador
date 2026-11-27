@@ -260,14 +260,14 @@ function gestioHtml(){
   const desv=sum(ks,x=>x.k.desv),guany=sum(ks,x=>x.k.costGuanyat);
   const B=tresoreria();
   const mods=S.modificats.filter(m=>['Proposat','Presentat al client'].includes(m.estat)).sort((a,b)=>(+b.import||0)-(+a.import||0));
-  return `<div class="head"><div><div class="eyebrow">Control d'obra</div><h1>Control de gestió</h1></div></div>
+  return `<div class="head"><div><div class="eyebrow">Control</div><h1>Control de gestió</h1></div></div>
+  <div class="small" style="margin:-4px 0 14px">Números de l'empresa. El % d'estructura, els tipus de compra, el logotip i els preus base són a <a href="#valors">Valors predeterminats</a>.</div>
   <div class="kpis">
    <div class="kpi"><div class="l">Producció pendent de certificar</div><div class="v">${fmtM(pendCert)}</div><div class="s">Obres actives · produït − certificat a origen</div></div>
    <div class="kpi"><div class="l">Certificacions per facturar</div><div class="v">${fmtM(perFact)}</div><div class="s">Conformades i encara sense factura</div></div>
    <div class="kpi"><div class="l">Marge net final previst</div><div class="v" style="color:${margeNet==null?'inherit':margeNet<0?'var(--bad)':'var(--ok)'}">${p1(margeNet)}</div><div class="s">Brut ${p1(marge)} · brut inicial ${margePrev==null?'—':fmtN(margePrev*100)+'%'} · pondera per venda de les partides</div></div>
    <div class="kpi"><div class="l">Desviació de cost</div><div class="v">${devHtml(desv)}</div><div class="s">${guany?fmtN(desv/guany*100)+'% sobre el cost guanyat':'Sense cost imputat encara'}</div></div>
   </div>
-  ${estrConfigHtml()}
   <section class="panel" style="margin-bottom:16px"><h2>Obres actives: producció, certificació i marge</h2>
   ${ks.length?`<div class="tw"><table><thead><tr><th>Obra</th><th class="num">Contracte vigent<br>Estructura prev.</th><th class="num">Produït<br>Pend. certificar</th><th class="num">Certificat<br>Facturat</th><th class="num">Cobrat</th><th class="num">Cost directe<br>Cost indirecte</th><th class="num">Cost imputat<br>Cost final prev.</th><th class="num">Desv. cost</th><th class="num">Marge brut<br>Marge net</th></tr></thead><tbody>
   ${ks.map(({o,k})=>{const d2=(a,b)=>`<td class="num">${a}<span class="l2">${b}</span></td>`;return `<tr data-act="goObraCtl" data-id="${esc(o.id)}"><td class="t-main"><div class="code">${esc(o.codi)}</div>${esc(o.nom)}</td>${d2(fmtM(k.contracte),fmtM(k.estPrev))}${d2(fmtM(k.produit),fmtM(k.pendCert))}${d2(fmtM(k.certOrigen),fmtM(k.f.facturat))}<td class="num">${fmtM(k.f.cobrat)}</td>${d2(fmtM(k.f.directe),fmtM(k.f.indirecte))}${d2(fmtM(k.costImp),k.ps.length?fmtM(k.eac):'—')}<td class="num">${k.ps.length?devHtml(k.desv):'—'}</td>${d2(pctHtml(k.marge),pctHtml(k.margeNet))}</tr>`}).join('')}

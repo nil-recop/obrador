@@ -255,9 +255,12 @@ let BP = null;
 const _listEs = listHtml;
 listHtml = function (mk, fo) {
   const h = _listEs(mk, fo); if (mk !== 'estudis' || fo) return h;
-  if (!BP) BP = JSON.parse(JSON.stringify(cfgEmp().preusBase || []));
-  return h + `<details class="panel" style="margin-top:18px"><summary style="padding:12px 14px;cursor:pointer;font-weight:600">Preus base de l'empresa (${(cfgEmp().preusBase || []).length})</summary><div class="pb"><div class="small" style="margin-bottom:6px">Cada estudi nou en fa una còpia que es pot ajustar. Codi (per exemple MOMIG), descripció i preu.</div>
-  <div style="display:grid;grid-template-columns:minmax(0,120px) minmax(0,1fr) 110px auto;gap:6px;align-items:center">${BP.map((p, i) => `${inpE('', `data-bp="${i}" data-pk="codi"`, p.codi, 'txt')}${inpE('', `data-bp="${i}" data-pk="desc"`, p.desc, 'txt')}${inpE('', `data-bp="${i}" data-pk="preu" inputmode="decimal"`, vE(p.preu))}${CANWRITE ? `<button class="btn sm" data-act="esBaseTreu" data-i="${i}" aria-label="Treu">×</button>` : '<span></span>'}`).join('')}</div>
-  ${CANWRITE ? '<div style="margin-top:8px;display:flex;gap:8px"><button class="btn sm" data-act="esBaseMes">+ Preu</button><button class="btn sm pri" data-act="esPreusBase">Desa els preus base</button></div>' : ''}</div></details>`;
+  return h + `<div class="small" style="margin-top:14px">Els preus base de l'empresa (${(cfgEmp().preusBase || []).length}) són a <a href="#valors">Control · Valors predeterminats</a>.</div>`;
 };
+function preusBaseHtml() {
+  if (!BP) BP = JSON.parse(JSON.stringify(cfgEmp().preusBase || []));
+  return `<section class="panel" style="margin-bottom:16px"><h2>Preus base de l'empresa (${(cfgEmp().preusBase || []).length})</h2><div class="pb"><div class="small" style="margin-bottom:6px">Cada estudi nou en fa una còpia que es pot ajustar. Codi (per exemple MOMIG), descripció i preu.</div>
+  <div style="display:grid;grid-template-columns:minmax(0,120px) minmax(0,1fr) 110px auto;gap:6px;align-items:center">${BP.map((p, i) => `${inpE('', `data-bp="${i}" data-pk="codi"`, p.codi, 'txt')}${inpE('', `data-bp="${i}" data-pk="desc"`, p.desc, 'txt')}${inpE('', `data-bp="${i}" data-pk="preu" inputmode="decimal"`, vE(p.preu))}${CANWRITE ? `<button class="btn sm" data-act="esBaseTreu" data-i="${i}" aria-label="Treu">×</button>` : '<span></span>'}`).join('')}</div>
+  ${CANWRITE ? '<div style="margin-top:8px;display:flex;gap:8px"><button class="btn sm" data-act="esBaseMes">+ Preu</button><button class="btn sm pri" data-act="esPreusBase">Desa els preus base</button></div>' : ''}</div></section>`;
+}
 document.addEventListener('input', (e) => { const t = e.target; if (t.dataset.bp && BP) BP[+t.dataset.bp][t.dataset.pk] = t.value; });

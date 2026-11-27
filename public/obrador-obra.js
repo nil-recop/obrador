@@ -76,7 +76,7 @@ const mesosEntre = (a, b) => { const l = []; for (let m = a; m <= b && l.length 
 const prodDe = (p) => p.prod || (+p.executat ? { [String(p.actualitzat || '').slice(0, 7) || mesAra()]: +p.executat } : {});
 const finsA = (p, m, inclos) => { const pr = prodDe(p), k = Object.keys(pr).filter((x) => (inclos ? x <= m : x < m)).sort().pop(); return k ? +pr[k] : 0; };
 const darrerProd = (pr) => { const k = Object.keys(pr).sort().pop(); return k ? +pr[k] : 0; };
-const prodItems = (oid) => [...S.partides.filter((p) => p.obraId === oid).map((p) => ({ mk: 'partides', p })), ...S.modificats.filter((p) => p.obraId === oid && p.estat !== 'Rebutjat').map((p) => ({ mk: 'modificats', p }))];
+const prodItems = (oid) => ordItems(oid, [...S.partides.filter((p) => p.obraId === oid).map((p) => ({ mk: 'partides', p })), ...S.modificats.filter((p) => p.obraId === oid && p.estat !== 'Rebutjat').map((p) => ({ mk: 'modificats', p }))]);
 const tancat = (oid, m) => ((obra(oid) || {}).prodTancat || []).includes(m);
 const PD = { obra: '', mes: '', v: {} };
 const _saveX = save;

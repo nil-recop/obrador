@@ -9,7 +9,7 @@ const impFm = () => { const fm = $('#frm'); return fm && IMK[fm.dataset.mk] ? fm
 const impBase = (fm) => IMK[fm.dataset.mk].base(fm.elements);
 const impCost = (mk, r) => (mk === 'factures' ? +r.base || 0 : mk === 'parts' ? costPart(r) : pmCost(r));
 const IMP_TP = [['p', 'Partida'], ['conj', 'Conjunt de partides'], ['cap', 'Capítol'], ['ind', 'Industrial']];
-const impPartides = (oid) => [...S.partides.filter((p) => p.obraId === oid).map((p) => ({ mk: 'partides', p })), ...S.modificats.filter((p) => p.obraId === oid && p.codi != null).map((p) => ({ mk: 'modificats', p }))];
+const impPartides = (oid) => ordItems(oid, [...S.partides.filter((p) => p.obraId === oid).map((p) => ({ mk: 'partides', p })), ...S.modificats.filter((p) => p.obraId === oid && p.codi != null).map((p) => ({ mk: 'modificats', p }))]);
 const impVal = (t, base) => { const s = String(t || '').trim(); if (!s) return 0; if (s.endsWith('%')) { const n = nv(s.slice(0, -1)); return isNaN(n) ? NaN : r2(base * n / 100); } return nv(s); };
 const impEtq = (x) => `${x.p.codi || ''} · ${String(x.p.descripcio || '').slice(0, 70)}`;
 const normI = (s) => String(s || '').trim().toLowerCase();

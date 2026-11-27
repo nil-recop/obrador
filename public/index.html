@@ -431,7 +431,7 @@ function dashHtml(){
   S.comandes.filter(c=>c.estat==='Sol·licitada').forEach(c=>att.push({tone:'info',tx:`Comanda per aprovar · ${c.num}`,sub:`${c.proveidor||''} · ${fmtM(c.import)}`,mk:'comandes',id:c.id}));
   S.actius.filter(a=>a.revisio&&a.revisio<=addDays(30)&&a.estat!=='Baixa').forEach(a=>att.push({tone:a.revisio<t?'bad':'warn',tx:`Revisió de ${a.nom}`,sub:`${a.codi||''} · ${fmtD(a.revisio)}`,mk:'actius',id:a.id}));
 
-  const exp30=addDays(30);S.tercers.filter(x=>x.estat!=='No apte').forEach(x=>[['rc','Assegurança RC'],['ss','Certificat Seguretat Social'],['hisenda','Certificat Hisenda']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençut':'Venç'} el ${fmtD(x[kk])}`,mk:'tercers',id:x.id})}));S.personal.filter(x=>x.estat!=='Inactiu').forEach(x=>[['prl','Formació PRL'],['aptitud','Aptitud laboral'],['habilitacio','Habilitació']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençuda':'Venç'} el ${fmtD(x[kk])}`,mk:'personal',id:x.id})}));S.qualitat.filter(x=>x.estat!=='Tancada'&&(x.gravetat==='Greu'||(x.termini&&x.termini<t))).forEach(x=>att.push({tone:x.gravetat==='Greu'?'bad':'warn',tx:`${x.tipus}: ${x.descripcio}`,sub:`${obraTxt(x.obraId)}${x.termini?' · termini '+fmtD(x.termini):''}`,mk:'qualitat',id:x.id}));S.modificats.filter(x=>x.estat==='Presentat al client').forEach(x=>att.push({tone:'info',tx:`Contradictòria pendent de resposta · ${x.num||''}`,sub:`${obraTxt(x.obraId)} · ${fmtM(x.import)}`,mk:'modificats',id:x.id}));S.certificacions.filter(x=>x.estat==='Conformada').forEach(x=>att.push({tone:'warn',tx:`Certificació ${x.num} conformada: pendent de facturar`,sub:`${obraTxt(x.obraId)} · ${fmtM(certPer(x))} del període`,mk:'certificacions',id:x.id}));const recent=S.fitxers.filter(f=>!f.paperera).sort((a,b)=>String(b.actualitzat).localeCompare(String(a.actualitzat))).slice(0,6);
+  const exp30=addDays(30);S.personal.filter(x=>x.estat!=='Inactiu').forEach(x=>[['prl','Formació PRL'],['aptitud','Aptitud laboral'],['habilitacio','Habilitació']].forEach(([kk,ll])=>{if(x[kk]&&x[kk]<=exp30)att.push({tone:x[kk]<t?'bad':'warn',tx:`${ll} · ${x.nom}`,sub:`${x[kk]<t?'Vençuda':'Venç'} el ${fmtD(x[kk])}`,mk:'personal',id:x.id})}));S.qualitat.filter(x=>x.estat!=='Tancada'&&(x.gravetat==='Greu'||(x.termini&&x.termini<t))).forEach(x=>att.push({tone:x.gravetat==='Greu'?'bad':'warn',tx:`${x.tipus}: ${x.descripcio}`,sub:`${obraTxt(x.obraId)}${x.termini?' · termini '+fmtD(x.termini):''}`,mk:'qualitat',id:x.id}));S.modificats.filter(x=>x.estat==='Presentat al client').forEach(x=>att.push({tone:'info',tx:`Contradictòria pendent de resposta · ${x.num||''}`,sub:`${obraTxt(x.obraId)} · ${fmtM(x.import)}`,mk:'modificats',id:x.id}));S.certificacions.filter(x=>x.estat==='Conformada').forEach(x=>att.push({tone:'warn',tx:`Certificació ${x.num} conformada: pendent de facturar`,sub:`${obraTxt(x.obraId)} · ${fmtM(certPer(x))} del període`,mk:'certificacions',id:x.id}));const recent=S.fitxers.filter(f=>!f.paperera).sort((a,b)=>String(b.actualitzat).localeCompare(String(a.actualitzat))).slice(0,6);
   const dt=new Date().toLocaleDateString('ca-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   return `
   ${hasEx&&CANWRITE?`<div class="banner"><p>Ara hi ha <b>dades d'exemple</b> (marcades com a exemple) perquè vegis com funciona l'Obrador. Quan comencis a entrar dades reals, pots esborrar-les.</p><button class="btn danger sm" data-act="wipeEx" id="wipeEx">Esborra les dades d'exemple</button></div>`:''}
@@ -544,7 +544,8 @@ function obraHtml(id){
     body=econPanel(id)+`<div class="grid2"><section class="panel" hidden><h2>Avanç per fases</h2><div class="pb">${byF.length?`<table><tbody>${byF.map(x=>`<tr style="cursor:default"><td style="width:40%">${esc(x.fs)} ${x.b?pill('Bloquejada'):''}</td><td>${progHtml(x.d/x.n*100)}</td><td class="num code">${x.d}/${x.n}</td></tr>`).join('')}</tbody></table>`:`<div class="muted">Encara no hi ha tasques planificades.</div>`}</div></section>
     <section class="panel"><h2>Fitxa</h2><div class="pb"><dl class="meta">
       <dt>Client</dt><dd>${esc(o.client||'—')}</dd><dt>Ubicació</dt><dd>${esc(o.ubicacio||'—')}</dd><dt>Tipologia</dt><dd>${esc(o.tipus||'—')}</dd>
-      <dt>Cap d'obra</dt><dd>${esc(o.cap||'—')}</dd><dt>Superfície</dt><dd class="mono">${o.superficie?fmtN(o.superficie)+' m²':'—'}</dd>
+      <dt>Cap d'àrea</dt><dd>${esc(o.capArea||'—')}</dd><dt>Cap de grup</dt><dd>${esc(o.capGrup||'—')}</dd>
+      <dt>Cap d'obra</dt><dd>${esc(o.cap||'—')}</dd><dt>Cap de producció</dt><dd>${esc(o.capProd||'—')}</dd><dt>Superfície</dt><dd class="mono">${o.superficie?fmtN(o.superficie)+' m²':'—'}</dd>
       <dt>Termini</dt><dd>${fmtD(o.inici)} → ${fmtD(o.fi)}</dd><dt>Ràtio</dt><dd class="mono">${o.superficie&&ec.vigent?fmtM(ec.vigent/o.superficie)+'/m²':'—'}</dd>
       <dt>Documents</dt><dd>${nd} fitxers</dd><dt>Cost directe</dt><dd class="mono">${fmtM(f.directe)}</dd><dt>Cost indirecte</dt><dd class="mono">${fmtM(f.indirecte)}</dd>
     </dl></div></section></div>`;
@@ -567,24 +568,24 @@ function folderKey(ow,c){return ow+'|'+c}
 function docsHtml(onlyObra){
   const files=S.fitxers;
   const cnt={};files.forEach(f=>{if(!f.paperera){const k=folderKey(f.owner,f.carpeta);cnt[k]=(cnt[k]||0)+1}});
+  if(!onlyObra&&V.docFolder!=='paperera'&&!V.docFolder.startsWith('empresa|'))V.docFolder=folderKey('empresa',CARP_EMP[0]);
   const cur=onlyObra?(V.obraDocFolder[onlyObra]||folderKey(onlyObra,CARP_OBRA[0])):V.docFolder;
   const fitem=(ow,c)=>{const k=folderKey(ow,c);return `<div class="f ${k===cur?'on':''}" data-act="folder" data-k="${esc(k)}" data-o="${onlyObra?esc(onlyObra):''}" tabindex="0">${esc(c)}<i>${cnt[k]||''}</i></div>`};
   let tree='';
   if(onlyObra){tree=CARP_OBRA.map(c=>fitem(onlyObra,c)).join('')}
   else{
     tree=`<details open><summary>Empresa</summary>${CARP_EMP.map(c=>fitem('empresa',c)).join('')}</details>`+
-    S.obres.slice().sort((a,b)=>String(a.codi).localeCompare(String(b.codi))).map(o=>`<details ${cur.startsWith(o.id+'|')?'open':''}><summary><span class="code">${esc(o.codi)}</span> ${esc(o.nom)}</summary>${CARP_OBRA.map(c=>fitem(o.id,c)).join('')}</details>`).join('')+
     `<div class="f root ${cur==='paperera'?'on':''}" data-act="folder" data-k="paperera" data-o="" tabindex="0">Paperera<i>${files.filter(f=>f.paperera).length||''}</i></div>`;
   }
   const q=onlyObra?'':V.docQ.trim().toLowerCase();
   let list,title,crumb;
-  if(q){list=files.filter(f=>!f.paperera&&(String(f.nom).toLowerCase().includes(q)||String(f.etiquetes||'').toLowerCase().includes(q)||ownerTxt(f.owner).toLowerCase().includes(q)));title=`Resultats per «${esc(V.docQ)}»`;crumb='Cerca a tots els documents'}
+  if(q){list=files.filter(f=>!f.paperera&&f.owner==='empresa'&&(String(f.nom).toLowerCase().includes(q)||String(f.etiquetes||'').toLowerCase().includes(q)||ownerTxt(f.owner).toLowerCase().includes(q)));title=`Resultats per «${esc(V.docQ)}»`;crumb="Cerca als documents de l'empresa"}
   else if(cur==='paperera'){list=files.filter(f=>f.paperera);title='Paperera';crumb='Documents eliminats. Es poden restaurar.'}
   else{const [ow,c]=cur.split('|');list=files.filter(f=>!f.paperera&&f.owner===ow&&f.carpeta===c);title=esc(c);crumb=esc(ownerTxt(ow))}
   list.sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'ca'));
   const canUp=!!ASSETS&&CANWRITE&&!q&&cur!=='paperera';
-  return `${onlyObra?'':`<div class="head"><div><div class="eyebrow">Servidor de fitxers</div><h1>Documents</h1></div><span class="sp"></span>
-    <input type="search" id="docq" data-bind="docq" placeholder="Cerca per nom, etiqueta o obra…" value="${esc(V.docQ)}" aria-label="Cerca documents" style="border:1px solid var(--line);background:var(--surface);border-radius:5px;padding:7px 10px;width:280px;max-width:100%"></div>`}
+  return `${onlyObra?'':`<div class="head"><div><div class="eyebrow">Empresa</div><h1>Documents de l'empresa</h1></div><span class="sp"></span>
+    <input type="search" id="docq" data-bind="docq" placeholder="Cerca per nom o etiqueta…" value="${esc(V.docQ)}" aria-label="Cerca documents" style="border:1px solid var(--line);background:var(--surface);border-radius:5px;padding:7px 10px;width:280px;max-width:100%"></div>`}
   <div class="docs"><nav class="tree" aria-label="Carpetes">${tree}</nav>
   <div style="min-width:0"><div class="crumb">${crumb}</div><div class="head" style="margin-bottom:10px"><h1 style="font-size:20px">${title}</h1><span class="sp"></span>
     ${canUp?`<label class="btn pri" for="up-${onlyObra||'g'}">Puja fitxers</label><input type="file" id="up-${onlyObra||'g'}" multiple hidden data-up="${esc(cur)}">`:''}</div>
@@ -780,6 +781,6 @@ async function boot(){
   db.doc('registre/recent').onSnapshot(s=>{S.registre=(s.exists&&s.data().entrades)||[];schedule()},()=>{});
   const r=route();if(r.doc)V.pendingDoc=r.doc;
 }
-window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=2"></script><script src="obrador-gestio.js?v=11"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=10"></script><script src="obrador-partides.js?v=5"></script><script src="obrador-docs.js?v=4"></script><script src="obrador-indirectes.js?v=2"></script><script src="obrador-obra.js?v=1"></script><script src="obrador-certificacions.js?v=1"></script><script src="obrador-partsmes.js?v=1"></script><script src="obrador-proformes.js?v=1"></script><script src="obrador-imputacio.js?v=3"></script><script src="obrador-estudis.js?v=1"></script><script src="obrador-comparatius.js?v=2"></script>
+window.addEventListener('DOMContentLoaded',()=>window.ObradorAcces(boot));</script><script src="obrador-lectura.js?v=2"></script><script src="obrador-gestio.js?v=12"></script><script src="obrador-personal.js?v=4"></script><script src="obrador-economia.js?v=5"></script><script src="obrador-costos.js?v=10"></script><script src="obrador-partides.js?v=6"></script><script src="obrador-docs.js?v=4"></script><script src="obrador-indirectes.js?v=3"></script><script src="obrador-obra.js?v=2"></script><script src="obrador-certificacions.js?v=1"></script><script src="obrador-partsmes.js?v=1"></script><script src="obrador-proformes.js?v=1"></script><script src="obrador-imputacio.js?v=4"></script><script src="obrador-estudis.js?v=2"></script><script src="obrador-comparatius.js?v=3"></script><script src="obrador-departaments.js?v=1"></script>
 </body>
 </html>

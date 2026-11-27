@@ -1,5 +1,10 @@
 /* Partides: capítols propis de cada obra i importació d'un arxiu d'Excel. */
 const SENSE_CAP = 'Sense capítol';
+/* Ordre de sempre: primer Partides i després Contradictòries; dins de cada una, per capítol (ordre de l'obra) i per l'ordre de la partida */
+function ordItems(oid, its) {
+  const ord = [...capsObra(oid), ''], k = (x) => [x.mk === 'modificats' ? 1 : 0, ord.indexOf(x.p.capitol || ''), x.p.ordre ?? 1e9];
+  return its.slice().sort((a, b) => { const p = k(a), q = k(b); return p[0] - q[0] || p[1] - q[1] || p[2] - q[2] || String(a.p.codi || '').localeCompare(String(b.p.codi || ''), 'ca', { numeric: true }); });
+}
 function capsObra(id) {
   const l = ((obra(id) || {}).capitols || []).slice();
   [...S.partides, ...S.modificats].filter((p) => p.obraId === id).forEach((p) => { if (p.capitol && !l.includes(p.capitol)) l.push(p.capitol); });

@@ -102,6 +102,7 @@ viewHtml = function (r) {
   const s = S.ofertes.find((x) => x.id === r.id);
   if (!s || !Array.isArray(s.linies)) return '<div class="empty"><b>No s\'ha trobat el comparatiu</b><div><a class="btn" href="#ofertes">Torna a Comparatius</a></div></div>';
   if (!CP || CP.id !== r.id || (!CP.brut && CP.v !== s.actualitzat)) CP = { id: r.id, d: JSON.parse(JSON.stringify((({ id, ...x }) => x)(s))), brut: false, v: s.actualitzat };
+  if (!CP.brut) cpOrdena(CP.d);
   return cpHtml();
 };
 const cpBloc = () => !CANWRITE || CP.d.estat === 'Anul·lat';
@@ -149,7 +150,7 @@ function cpHtml() {
    ${tot('sub', 'Subtotal (import del contracte)')}
    <tr class="sec"><td colspan="${7 + P.length}">Ajudes / altres conceptes (no es redacten en el contracte)</td></tr>
    ${d.ajudes.map(ajF).join('')}
-   ${dis ? '' : `<tr style="cursor:default"><td></td><td colspan="${6 + P.length}"><button class="btn sm" data-act="cpNouA">+ Concepte</button> <span class="small">Ex.: baixa mínima per tornar a parlar, quantitat −0,25 i preu =SUBTOTAL; transports que es busquen per un altre costat.</span></td></tr>`}
+   ${dis ? '' : `<tr style="cursor:default"><td></td><td colspan="${6 + P.length}"><button class="btn sm" data-act="cpNouA">+ Concepte</button></td></tr>`}
    ${tot('aj', 'Suma d\'ajudes i altres conceptes')}${tot('total', 'TOTAL DEL COMPARATIU')}${tot('fin', 'Financers')}${tot('totFin', 'Total comparatiu inclòs financers')}${tot('millora', 'Millora segons planificat')}
    <tr class="tot" style="cursor:default"><td colspan="4">Adjudicatari</td>${P.map((p, j) => `<td class="num"><label style="display:inline-flex;gap:4px;align-items:center;font-weight:400"><input type="radio" name="cp-adj" data-cpadj="${j}" ${d.adj === p.id ? 'checked' : ''} ${dis}>Adjudica</label></td>`).join('')}<td colspan="3">${d.adj && !dis ? '<button class="btn sm" data-act="cpNoAdj">Treu l\'adjudicació</button>' : ''}</td></tr>
    </tbody></table></div>` : '<div class="empty"><b>Encara no hi ha partides</b>Tria les partides de l\'obra que entren en aquest comparatiu.</div>'}
@@ -212,13 +213,20 @@ document.addEventListener('change', async (e) => {
 });
 
 /* ---------- Partides ---------- */
-const cpItems = (oid) => prodItems(oid).filter((x) => x.mk === 'partides' || ['Aprovat', 'Executat'].includes(x.p.estat));
+const cpItems = (oid) => ordItems(oid, prodItems(oid).filter((x) => x.mk === 'partides' || ['Aprovat', 'Executat'].includes(x.p.estat)));
+const cpGrup = (x) => (x.mk === 'modificats' ? 'Contradictòries · ' : '') + (x.p.capitol || SENSE_CAP);
+/* Les línies amb partida, en l'ordre de Partides i Contradictòries; les lliures, al final */
+function cpOrdena(d) {
+  const ix = new Map(cpItems(d.obraId).map((x, i) => [x.p.id, i]));
+  const k = (l) => (l.pid && ix.has(l.pid) ? ix.get(l.pid) : 1e9);
+  d.linies = d.linies.map((l, i) => ({ l, i })).sort((a, b) => k(a.l) - k(b.l) || a.i - b.i).map((x) => x.l);
+}
 function cpTria() {
   const d = CP.d, its = cpItems(d.obraId), ja = new Set(d.linies.map((l) => l.pid).filter(Boolean));
   if (!its.length) { toast('L\'obra encara no té partides. Pots afegir línies lliures.'); return; }
-  const caps = [...new Set(its.map((x) => (x.mk === 'modificats' ? 'Contradictòries' : x.p.capitol || SENSE_CAP)))], inds = [...new Set(its.map((x) => x.p.industrial).filter(Boolean))].sort();
+  const caps = [...new Set(its.map(cpGrup))], inds = [...new Set(its.map((x) => x.p.industrial).filter(Boolean))].sort();
   const body = `<div class="tools" style="margin:0 0 8px"><input type="search" id="cps-q" placeholder="Cerca codi o descripció…" aria-label="Cerca partides">${inds.length ? `<select id="cps-ind" aria-label="Industrial"><option value="">Tots els industrials</option>${inds.map((x) => `<option>${esc(x)}</option>`).join('')}</select>` : ''}</div>
-   <div class="tw"><table class="cpsel"><tbody>${caps.map((c) => `<tr class="cap" data-scap="${esc(c)}"><td style="width:30px"><input type="checkbox" data-cpscap aria-label="Tot el capítol ${esc(c)}"></td><td colspan="3">${esc(c)}</td></tr>` + its.filter((x) => (x.mk === 'modificats' ? 'Contradictòries' : x.p.capitol || SENSE_CAP) === c).map((x) => `<tr style="cursor:default" data-sp="${esc(x.p.id)}" data-sc="${esc(c)}" data-si="${esc(x.p.industrial || '')}" data-st="${esc(((x.p.codi || '') + ' ' + (x.p.descripcio || '')).toLowerCase())}"><td><input type="checkbox" data-cps="${esc(x.p.id)}" ${ja.has(x.p.id) ? 'checked disabled' : ''} aria-label="${esc(x.p.codi || '')}"></td><td class="code">${esc(x.p.codi || '')}</td><td style="font-size:12.5px">${esc(String(x.p.descripcio || '').slice(0, 140))}${x.p.industrial ? `<span class="l2" style="text-align:left">${esc(x.p.industrial)}</span>` : ''}</td><td class="num" style="white-space:nowrap">${N3(+x.p.amidament || 0)} ${esc(x.p.unitat || '')}</td></tr>`).join('')).join('')}</tbody></table></div>`;
+   <div class="tw"><table class="cpsel"><tbody>${caps.map((c) => `<tr class="cap" data-scap="${esc(c)}"><td style="width:30px"><input type="checkbox" data-cpscap aria-label="Tot el capítol ${esc(c)}"></td><td colspan="3">${esc(c)}</td></tr>` + its.filter((x) => cpGrup(x) === c).map((x) => `<tr style="cursor:default" data-sp="${esc(x.p.id)}" data-sc="${esc(c)}" data-si="${esc(x.p.industrial || '')}" data-st="${esc(((x.p.codi || '') + ' ' + (x.p.descripcio || '')).toLowerCase())}"><td><input type="checkbox" data-cps="${esc(x.p.id)}" ${ja.has(x.p.id) ? 'checked disabled' : ''} aria-label="${esc(x.p.codi || '')}"></td><td class="code">${esc(x.p.codi || '')}</td><td style="font-size:12.5px">${esc(String(x.p.descripcio || '').slice(0, 140))}${x.p.industrial ? `<span class="l2" style="text-align:left">${esc(x.p.industrial)}</span>` : ''}</td><td class="num" style="white-space:nowrap">${N3(+x.p.amidament || 0)} ${esc(x.p.unitat || '')}</td></tr>`).join('')).join('')}</tbody></table></div>`;
   drawer('Tria les partides', body, '<span class="small" id="cps-n"></span><span class="sp"></span><button class="btn" data-act="close">Cancel·la</button><button class="btn pri" data-act="cpAfegeix">Afegeix</button>');
   $('#drawerHost .drawer').classList.add('ampla'); cpSelN();
 }
@@ -241,7 +249,7 @@ function cpAfegeix() {
   const its = cpItems(CP.d.obraId);
   // en l'ordre de l'obra
   its.filter((x) => ids.includes(x.p.id)).forEach((x) => { const p = x.p; CP.d.linies.push({ id: newId('cl'), pid: p.id, mk: x.mk, codi: p.codi || '', desc: p.descripcio || '', am: +p.amidament || 0, ut: p.unitat || '', pem: +p.preuVenda || 0, obj: +p.costUnit || 0 }); });
-  closeDrawer(); CP.brut = true; paint(); toast(`${ids.length} partides afegides.`);
+  cpOrdena(CP.d); closeDrawer(); CP.brut = true; paint(); toast(`${ids.length} partides afegides.`);
 }
 
 /* ---------- Ofertes (documents) ---------- */

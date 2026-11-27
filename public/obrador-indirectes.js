@@ -1,7 +1,19 @@
 /* Indirectes: quadre mensual de previsió. Dedicacions = cost mensual × %; la resta, imports per mes.
    Els mesos acabats compten com a cost real; el mes en curs i els següents són previsió.
    Les compres indirectes només es preveuen aquí: el seu cost real ve de Compres i Proformes. */
-const IND_DED = ['Dedicació cap de grup', "Dedicació cap d'obra", 'Dedicació cap de producció'];
+const IND_DED = ["Dedicació cap d'àrea", 'Dedicació cap de grup', "Dedicació cap d'obra", 'Dedicació cap de producció'];
+/* Els caps de l'obra (fitxa de l'obra) i la dedicació que els correspon */
+const CAPS_OBRA = [['capArea', "Cap d'àrea", "Dedicació cap d'àrea"], ['capGrup', 'Cap de grup', 'Dedicació cap de grup'], ['cap', "Cap d'obra", "Dedicació cap d'obra"], ['capProd', 'Cap de producció', 'Dedicació cap de producció']];
+/* Una línia de dedicació per a cada cap amb nom a la fitxa de l'obra */
+function qCaps(oid, q) {
+  const o = obra(oid) || {};
+  CAPS_OBRA.forEach(([k, , tipus]) => {
+    const nom = String(o[k] || '').trim(); if (!nom) return;
+    const l = q.linies.find((x) => x.tipus === tipus && (x.deObra || normC(x.nom) === normC(nom))) || q.linies.find((x) => x.tipus === tipus && !x.deObra);
+    if (l) { l.nom = nom; l.deObra = k; } else q.linies.push({ id: 'cap-' + k, tipus, nom, cost: '', mesos: {}, deObra: k });
+  });
+  return q;
+}
 const IND_FIX = [['dietes', 'Dietes'], ['despl', 'Desplaçaments i peatges'], ['fin', 'Càrregues financeres'], ['compres', 'Compres indirectes (previsió)'], ['altres', 'Altres sense factura']];
 S.indirectes = [];
 COLS.push('indirectes');
@@ -20,7 +32,7 @@ function quadre(oid) {
     l = q.linies.find((y) => y.tipus === k); if (!l) q.linies.push(l = { id: k, tipus: k, mesos: {} });
     l.mesos[m] = r2((+l.mesos[m] || 0) + (+x.import || 0));
   });
-  return q;
+  return qCaps(oid, q);
 }
 const qCost = (l, m) => (esDed(l) ? r2((+l.cost || 0) * (+l.mesos[m] || 0) / 100) : +l.mesos[m] || 0);
 const qMesos = (q) => [...new Set(q.linies.flatMap((l) => Object.keys(l.mesos)))].sort();
@@ -54,20 +66,21 @@ function qVeu(oid) { // còpia amb els textos convertits a números
   q.linies.forEach((l) => { if ('cost' in l) l.cost = num(l.cost) || 0; Object.keys(l.mesos).forEach((m) => { const n = num(l.mesos[m]); if (n == null) delete l.mesos[m]; else l.mesos[m] = n || 0; }); });
   return q;
 }
-function qCols(q) { return [...q.linies.filter(esDed), ...IND_FIX.map(([k, l]) => ({ ...(q.linies.find((x) => x.tipus === k) || { id: k, tipus: k, mesos: {} }), et: l }))]; }
+const qDeds = (q) => q.linies.filter(esDed).map((l, i) => ({ l, i })).sort((a, b) => IND_DED.indexOf(a.l.tipus) - IND_DED.indexOf(b.l.tipus) || a.i - b.i).map((x) => x.l);
+function qCols(q) { return [...qDeds(q),...IND_FIX.map(([k, l]) => ({ ...(q.linies.find((x) => x.tipus === k) || { id: k, tipus: k, mesos: {} }), et: l }))]; }
 function quadreHtml(oid) {
   const o = obra(oid), q = qEd(oid), v = qVeu(oid), ara = today().slice(0, 7), dis = CANWRITE ? '' : 'disabled';
   const ok = (m) => /^\d{4}-\d\d$/.test(m), ini = String(o.inici || '').slice(0, 7), fi = String(o.fi || '').slice(0, 7), am = qMesos(q);
   let lim = [ok(ini) ? ini : '', ok(fi) ? fi : ok(ini) || am.length ? ara : '', ...am, ...(q.extra || [])].filter(Boolean).sort();
   if (!lim.length) lim = [ara, mesMes(ara, 11)];
-  const ms = mesosEntre(lim[0], lim[lim.length - 1]), cols = qCols(q), ded = q.linies.filter(esDed);
+  const ms = mesosEntre(lim[0], lim[lim.length - 1]), cols = qCols(q), ded = qDeds(q);
   const f = fin(oid), e = econ(oid);
   const fila = (l, x, b) => `<tr style="cursor:default"><td${b ? ' style="font-weight:600"' : ''}>${l}</td><td class="num"${b ? ' style="font-weight:600"' : ''}>${x == null ? '—' : fmtM(x)}</td></tr>`;
   const sug = [...new Set([...S.personal.filter((p) => p.estat !== 'Inactiu').map((p) => p.nom), ...S.indirectes.flatMap((x) => (x.linies || []).map((l) => l.nom))].filter(Boolean))];
   return `<section class="panel" style="margin-bottom:16px"><h2>Cost indirecte de l'obra<span class="sp"></span><span class="small">Sense IVA · dades desades</span></h2><div class="econ-g">
   <table><thead><tr><th>Previsió</th><th class="num">Import</th></tr></thead><tbody>${fila('Total del quadre (previst)', e.indPrev, 1)}${fila('Real fins avui', f.indirecte)}${fila('Disponible', e.indPrev == null ? null : e.indPrev - f.indirecte, 1)}</tbody></table>
   <table><thead><tr><th>Real fins avui</th><th class="num">Import</th></tr></thead><tbody>${fila('Quadre, mesos acabats', f.indImp)}${fila('Compres i factures indirectes', f.indCompres)}${fila('Hores de tècnics als parts', f.indMa)}</tbody></table></div>${f.indMa ? '<div class="pb small" style="color:var(--warn)">Hi ha hores de tècnics als parts. Si ja són a la dedicació del quadre, compten dues vegades.</div>' : ''}</section>
-  <section class="panel" style="margin-bottom:16px"><h2>Persones i dedicació</h2><div class="pers">${ded.map((l) => `<div><label>Càrrec<select class="ed txt" data-ql="${esc(l.id)}" data-qk="tipus" ${dis}>${IND_DED.map((t) => `<option value="${esc(t)}" ${t === l.tipus ? 'selected' : ''}>${esc(t.replace('Dedicació c', 'C'))}</option>`).join('')}</select></label><label>Nom<input class="ed txt" id="qn-${esc(l.id)}" list="q-noms" autocomplete="off" data-ql="${esc(l.id)}" data-qk="nom" value="${esc(l.nom || '')}" ${dis}></label><label>Cost mensual (€)<input class="ed" id="qc-${esc(l.id)}" data-col="qc" inputmode="decimal" data-ql="${esc(l.id)}" data-qk="cost" value="${esc(qTxt(l.cost))}" ${dis}></label>${CANWRITE ? `<button class="btn sm" data-act="qTreu" data-id="${esc(l.id)}">Treu</button>` : ''}</div>`).join('')}${CANWRITE ? '<div style="justify-content:center;border-style:dashed"><button class="btn" data-act="qPersona">+ Afegeix una persona</button></div>' : ''}</div><datalist id="q-noms">${sug.map((n) => `<option value="${esc(n)}">`).join('')}</datalist></section>
+  <section class="panel" style="margin-bottom:16px"><h2>Persones i dedicació<span class="sp"></span><span class="small">Els caps surten de la fitxa de l'obra: només cal el cost mensual</span>${CANWRITE ? `<button class="btn sm" data-act="edit" data-mk="obres" data-id="${esc(oid)}">Caps de l'obra</button>` : ''}</h2><div class="pers">${ded.map((l) => (l.deObra && String(o[l.deObra] || '').trim()) ? `<div><div><span class="small">${esc((CAPS_OBRA.find((c) => c[0] === l.deObra) || [])[1] || '')}</span><div style="font-weight:600">${esc(l.nom)}</div></div><label>Cost mensual (€)<input class="ed" id="qc-${esc(l.id)}" data-col="qc" inputmode="decimal" data-ql="${esc(l.id)}" data-qk="cost" value="${esc(qTxt(l.cost))}" ${dis}></label></div>` : `<div><label>Càrrec<select class="ed txt" data-ql="${esc(l.id)}" data-qk="tipus" ${dis}>${IND_DED.map((t) => `<option value="${esc(t)}" ${t === l.tipus ? 'selected' : ''}>${esc(t.replace('Dedicació c', 'C'))}</option>`).join('')}</select></label><label>Nom<input class="ed txt" id="qn-${esc(l.id)}" list="q-noms" autocomplete="off" data-ql="${esc(l.id)}" data-qk="nom" value="${esc(l.nom || '')}" ${dis}></label><label>Cost mensual (€)<input class="ed" id="qc-${esc(l.id)}" data-col="qc" inputmode="decimal" data-ql="${esc(l.id)}" data-qk="cost" value="${esc(qTxt(l.cost))}" ${dis}></label>${CANWRITE ? `<button class="btn sm" data-act="qTreu" data-id="${esc(l.id)}">Treu</button>` : ''}</div>`).join('')}${CANWRITE ? '<div style="justify-content:center;border-style:dashed"><button class="btn" data-act="qPersona">+ Una altra persona</button></div>' : ''}</div><datalist id="q-noms">${sug.map((n) => `<option value="${esc(n)}">`).join('')}</datalist></section>
   <div class="tw"><table class="quad"><thead><tr><th>Mes</th>${cols.map((l) => `<th class="num">${esDed(l) ? `${esc(l.nom || l.tipus.replace('Dedicació c', 'C'))}<br>% dedicació` : esc(l.et) + '<br>€'}</th>`).join('')}<th class="num">Total mes</th></tr></thead><tbody>
   ${CANWRITE ? `<tr style="cursor:default"><td class="small">Omple tots els mesos</td>${cols.map((l) => `<td><input class="ed" data-col="qo" data-qo="${esc(l.id)}" inputmode="decimal" placeholder="${esDed(l) ? '%' : '€'}" aria-label="Omple tots els mesos"></td>`).join('')}<td></td></tr>` : ''}
   ${ms.map((m) => `<tr style="cursor:default" data-qm="${m}"><td class="t-main">${nomMesC(m)}<span class="l2">${m < ara ? 'Real' : 'Previsió'}</span></td>${cols.map((l) => `<td><input class="ed" id="q-${esc(l.id)}-${m}" data-col="q-${esc(l.id)}" data-ql="${esc(l.id)}" data-qm="${m}" inputmode="decimal" autocomplete="off" aria-label="${esc((l.nom || l.et || l.tipus) + ' ' + nomMesC(m))}" value="${esc(qTxt(l.mesos[m]))}" ${dis}></td>`).join('')}<td class="num" data-qt="${m}"></td></tr>`).join('')}
